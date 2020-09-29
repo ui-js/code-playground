@@ -1,0 +1,35 @@
+{
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "build",
+
+    "incremental": true,
+    "tsBuildInfoFile": "./build/ts-cache.tsbuildinfo",
+
+    "lib": ["es2020", "dom", "dom.iterable", "scripthost"],
+    // Do not include all the type definitions in `node_modules/@types`,
+    // which include NodeJS definitions that are not applicable to a web app
+    // but only those type definitions that are required
+    "types": ["@types/codemirror"],
+
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+
+    "target": "es2019",
+    "module": "esnext",
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "allowUmdGlobalAccess": true, // for CodeMirror
+
+    "strictNullChecks": false,
+    "noImplicitAny": false,
+    "noLib": false,
+
+    // We'll strip the comments with rollup.
+    // Need them for the declaration files
+    "removeComments": false,
+    "sourceMap": true
+  },
+  "exclude": ["coverage", "node_modules", "**/*.spec.ts"]
+}
