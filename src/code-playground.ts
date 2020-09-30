@@ -48,6 +48,9 @@ template.innerHTML = `
       justify-content: center;
       align-items: center;
     }
+    :host > div.stack-layout {
+      display: block;
+    }
     .original-content {
       display: none;
     }
@@ -78,6 +81,13 @@ template.innerHTML = `
       width: calc(50% - .5em);
       margin-left: .5em;
     }
+    .stack-layout .source, .stack-layout .result {
+      width: auto;
+      margin: 0;
+    }
+    .stack-layout .result  {
+      margin-top: 2em;
+    }
     .console {
       max-height: 300px;
       padding: 8px;
@@ -87,6 +97,9 @@ template.innerHTML = `
       color: ${base09};
       background: ${base00};
       white-space: pre-wrap;
+    }
+    .console .sep {
+      color: ${base05};
     }
     .console .boolean {
       color: ${base0e};
@@ -105,6 +118,9 @@ template.innerHTML = `
     }
     .console .number {
       color: ${base0e};
+    }
+    .console .property {
+      color: ${base0b}
     }
     .console .error {
       display: block;
@@ -130,7 +146,51 @@ template.innerHTML = `
       clear: both;
       --tab-indicator-offset: 0;
     }
-
+    .stack-layout .tabs {
+      /* position: absolute; */
+      flex-flow: column;
+      /* height: max-content; */
+      /* min-height: min-content; */
+    }
+    .stack-layout .tab {
+      height: auto;
+    }
+    .stack-layout .tab:first-of-type:after {
+      display: none;
+    }
+    .stack-layout .tab:first-child, .stack-layout .tab:last-child {
+      border: none;
+      border-radius: 0;
+      background: ${base02};
+      padding-left: 8px;
+      padding-right: 8px;
+      padding-bottom: .5em;
+      margin-left: -8px;
+      margin-right: -8px;
+      margin-bottom: .5em;
+      margin-top: -8px;
+    }
+    .stack-layout .tab:first-child {
+      border-top-left-radius: 36px;
+      border-top-right-radius: 36px
+    }
+    .stack-layout .content {
+      visibility: visible;
+      position: relative;
+      top: auto;
+      left: auto;
+      bottom: auto;
+    }
+    .stack-layout .tab > label {
+      display: block;
+      position: relative;
+      height: 2em;
+      text-align: left;
+      padding-left: .5em;
+    }
+    .stack-layout .tab > input[type="radio"] {
+      visibility: hidden;
+    }
     .tab {
       min-width: ${TAB_WIDTH}px;
       border-color: ${base02};
@@ -425,7 +485,7 @@ export class CodeSection extends HTMLElement {
   moduleMap: { [module: string]: string };
 
   static get observedAttributes(): string[] {
-    return ["activetab"];
+    return ["activetab", "layout"];
   }
 
   attributeChangedCallback(
@@ -434,6 +494,14 @@ export class CodeSection extends HTMLElement {
     newValue: string
   ): void {
     if (name === "activetab" && oldValue !== newValue) {
+      this.activateTab(newValue);
+    } else if (name === "layout" && oldValue !== newValue) {
+      this.shadowRoot
+        .querySelector<HTMLElement>(":host > div")
+        .classList.toggle("tab-layout", newValue !== "stack");
+      this.shadowRoot
+        .querySelector<HTMLElement>(":host > div")
+        .classList.toggle("stack-layout", newValue === "stack");
     }
   }
   constructor() {
@@ -493,15 +561,6 @@ export class CodeSection extends HTMLElement {
       const tab = ev.target as HTMLElement;
       if (tab.tagName === "LABEL") {
         self.activateTab((tab.parentNode as HTMLElement).dataset.name);
-        // const firstTab = shadowRoot.querySelector<HTMLElement>(
-        //   ".tab:first-of-type"
-        // );
-        // shadowRoot
-        //   .querySelector<HTMLElement>(".tabs")
-        //   .style.setProperty(
-        //     "--tab-indicator-offset",
-        //     tab.offsetLeft - firstTab.offsetLeft + "px"
-        //   );
       }
     };
 
@@ -581,7 +640,7 @@ export class CodeSection extends HTMLElement {
     const activeTab: HTMLElement =
       this.shadowRoot.querySelector<HTMLElement>(`[data-name=${name}]`) ??
       this.shadowRoot.querySelectorAll<HTMLElement>(".tab")[0];
-
+    if (!activeTab) return;
     activeTab.querySelector<HTMLInputElement>(
       'input[type="radio"]'
     ).checked = true;
@@ -845,66 +904,6 @@ export class CodeSection extends HTMLElement {
       this.removeAttribute("activetab");
     }
   }
-
-  // 'hidden' is a global DOM attribute
-  // get hidden(): boolean {
-  //   return this.hasAttribute("hidden");
-  // }
-
-  // set hidden(val: boolean) {
-  //   if (val) {
-  //     this.setAttribute("hidden", "");
-  //   } else {
-  //     this.removeAttribute("hidden");
-  //   }
-  // }
-
-  // id ?
-  // tabindex?
-  // title?
-  // translate?
-
-  // // 'disabled' is a common (e.g. <input>), but not global, DOM attribute
-  // get disabled(): boolean {
-  //   return this.hasAttribute("disabled");
-  // }
-
-  // set disabled(val: boolean) {
-  //   if (val) {
-  //     this.setAttribute("disabled", "");
-  //   } else {
-  //     this.removeAttribute("disabled");
-  //   }
-  // }
-
-  // // 'readonly' is a common (e.g. <input>), but not global, DOM attribute
-  // get readOnly(): boolean {
-  //   return this.hasAttribute("readonly");
-  // }
-
-  // set readOnly(val: boolean) {
-  //   // Reflect the value of the disabled property as an HTML attribute.
-  //   if (val) {
-  //     this.setAttribute("readonly", "");
-  //   } else {
-  //     this.removeAttribute("readonly");
-  //   }
-  // }
-
-  // // 'value' is a common (e.g. <input>), but not global, DOM attribute
-  // // It is *not* reflected as an attribute (the attribute is used to set
-  // // the initial value)
-  // get value(): string {
-  //   return this.value;
-  // }
-
-  // set value(val: string) {
-  //   this.value = val;
-  // }
-
-  // getDefaultText(): string {
-  //   return "Foo!";
-  // }
 }
 
 function randomId() {
@@ -914,31 +913,48 @@ function randomId() {
   );
 }
 
-function asString(value, options: { quote?: string } = {}) {
+function asString(
+  depth: number,
+  value: any,
+  options: { quote?: string } = {}
+): string {
+  if (depth > 5) return '<span class="sep">(...)</span>';
+
   options.quote ??= '"';
   if (typeof value === "boolean") {
-    return `<span class="boolean">${String(value)}</span>`;
+    return `<span class="boolean">${escapeHTML(String(value))}</span>`;
   }
   if (typeof value === "number") {
-    return `<span class="number">${String(value)}</span>`;
+    return `<span class="number">${escapeHTML(String(value))}</span>`;
   }
   if (typeof value === "string") {
     if (options.quote.length === 0) {
-      return value;
+      return escapeHTML(value);
     }
-    return `<span class="string">${options.quote}${value}${options.quote}</span>`;
+    return `<span class="string">${escapeHTML(
+      options.quote + value + options.quote
+    )}</span>`;
   }
   if (Array.isArray(value)) {
-    return "[" + value.map((x) => asString(x)).join(", ") + "]";
+    return (
+      "<span class='sep'>[</span>" +
+      value
+        .map((x) => asString(depth + 1, x))
+        .join("<span class='sep'>, </span>") +
+      "<span class='sep'>]</span>"
+    );
   }
   if (typeof value === "function") {
+    let functionValue = "";
     if (value.hasOwnProperty("toString")) {
-      return `<span class="function">ƒ ${value.toString()}</span>`;
+      functionValue = escapeHTML(value.toString());
+    } else {
+      functionValue = escapeHTML(String(value));
     }
-    return `<span class="function">ƒ  ${String(value)}</span>`;
+    return `<span class="function">ƒ  ${functionValue}</span>`;
   }
   if (value === null) {
-    return `<span class="null">${String(value)}</span>`;
+    return `<span class="null">${escapeHTML(String(value))}</span>`;
   }
   if (typeof value === "object") {
     const props = Object.keys(value);
@@ -949,21 +965,38 @@ function asString(value, options: { quote?: string } = {}) {
       }
     });
     if (props.length === 0 && typeof props.toString === "function") {
-      return value.toString();
+      const result = value.toString();
+      if (result === "[object Object]") return '<span class="sep">{}</span>';
+      return result;
     }
     const propStrings = props.sort().map((key) => {
-      return (
-        key +
-        ": " +
-        (typeof value[key] === "object" && value[key] !== null
-          ? "..."
-          : asString(value[key]))
-      );
+      if (typeof value[key] === "object" && value[key] !== null) {
+        let result = asString(depth + 1, value[key]);
+        if (result.length > 80) {
+          result = "<span class='sep'>(...)</span>";
+        }
+        return `<span class="property">${key}</span><span class='sep'>: </span>${result}`;
+      }
+      if (typeof value[key] === "function") {
+        return `<span class="property">${key}</span></span><span class='sep'> : </span><span class='function'>ƒ (...)</span>`;
+      }
+      return `<span class="property">${key}</span></span><span class='sep'> : </span>${asString(
+        depth + 1,
+        value[key]
+      )}`;
     });
     if (propStrings.length < 5) {
-      return "{" + propStrings.join(", ") + "}";
+      return (
+        "</span><span class='sep'>{</span>" +
+        propStrings.join("</span><span class='sep'>, </span>") +
+        "</span><span class='sep'>}</span>"
+      );
     }
-    return "{\n    " + propStrings.join(",\n    ") + "\n}";
+    return (
+      "</span><span class='sep'>{</span>\n    " +
+      propStrings.join("</span><span class='sep'>,</span>\n    ") +
+      "\n</span><span class='sep'>}</span>"
+    );
   }
   return String(value);
 }
@@ -978,7 +1011,7 @@ function interpolate(args: any[]): string {
       (all, key, width = "", dp) => {
         if (key === "%0") {
           // string
-          return asString(rest.shift());
+          return asString(0, rest.shift());
         }
 
         if (key === "%s") {
@@ -1007,7 +1040,7 @@ function interpolate(args: any[]): string {
           return res;
         }
 
-        return asString(res).padStart(width, " ");
+        return asString(0, res).padStart(width, " ");
       }
     );
 
@@ -1016,11 +1049,20 @@ function interpolate(args: any[]): string {
 
   if (rest.length) {
     return (
-      asString(format, { quote: "" }) +
-      rest.map((x) => asString(x, { quote: "" })).join("")
+      asString(0, format, { quote: "" }) +
+      rest.map((x) => asString(0, x, { quote: "" })).join("")
     );
   }
-  return asString(format, { quote: "" });
+  return asString(0, format, { quote: "" });
+}
+
+function escapeHTML(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 
 // Register the tag for the element, only if it isn't already registered

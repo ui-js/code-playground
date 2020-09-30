@@ -44,9 +44,9 @@ const TERSER_OPTIONS = {
 
 const ROLLUP = [
   {
-    input: "./src/index.ts",
+    input: "./src/code-playground.ts",
     output: {
-      file: `${BUILD_DIRECTORY}/index.js`,
+      file: `${BUILD_DIRECTORY}/code-playground.js`,
       format: "es",
       sourcemap: !PRODUCTION,
     },

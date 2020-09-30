@@ -10,7 +10,30 @@
 </head>
 
 <body>
-    <code-playground style="height:500px;margin-bottom: 1em;">
+    <code-playground layout="stack">
+        <script>
+            moduleMap = {
+                mathlive: "//unpkg.com/mathlive/dist/mathlive.mjs",
+            };
+        </script>
+        <div slot="javascript">import MathLive from 'mathlive';
+const mf = MathLive.makeMathField(document.getElementById('mathfield'), 
+    {
+        onContentDidChange: (mf) => {
+            const latex = mf.$text();
+            console.log(latex);
+        },
+});
+console.log(mf.getConfig().customVirtualKeyboardLayers);
+</div>
+        <div slot="html">&lt;div id="mathfield"&gt;
+    x=\frac{-b\pm \sqrt{b^2-4ac}}{2a}
+&lt;/div&gt;</div>
+
+    </code-playground>
+
+<!--     
+    <code-playground style="height:500px;margin-top: 2em; margin-bottom: 1em;">
         <div slot="javascript">var someObject = { str: "Some text", id: 5 };
 console.log("This is %cMy stylish message", "color: yellow; font-style: italic; background-color: blue;padding: 2px");
 console.log(Math.sin);
@@ -38,9 +61,9 @@ MathLive.makeMathField(document.getElementById('mathfield'));
         <div slot="html">&lt;div id="mathfield"&gt;
     x=\frac{-b\pm \sqrt{b^2-4ac}}{2a}
 &lt;/div&gt;</div>
-    </code-playground>
+    </code-playground> -->
 
-    <script type="module" src="../build/index.js"></script>
+    <script type="module" src="../build/code-playground.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/codemirror.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/mode/javascript/javascript.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/mode/xml/xml.min.js"></script>

@@ -60,3 +60,22 @@ The Javascript source code is modified before execution:
 
 will result in the `'mathlive'` module to be loaded from the
 `'//unpkg.com/mathlive/dist/mathlive.mjs'` URL;
+
+# Attributes and Properties
+
+The attributes can be specified directly on the component, e.g.
+
+```html
+<code-playground layout="stack">
+  <div slot="javascript">...</div>
+  <div slot="html">...</div>
+</code-playground>
+```
+
+There are corresponding properties for the attributes which can be
+accessed via JavaScript.
+
+| Attribute   | Property    |                                                                                                                      |
+| ----------- | ----------- | -------------------------------------------------------------------------------------------------------------------- |
+| `layout`    |             | `stack` (each section is displayed in a column) or `tabs` (each section is displayed in a panel with a tab selector) |
+| `activetab` | `activeTab` | `html`, `javascript` or `css`: indicate which tab is visible                                                         |
