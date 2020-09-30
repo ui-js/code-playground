@@ -101,13 +101,23 @@ template.innerHTML = `
     .console .sep {
       color: ${base05};
     }
+    .console .index {
+      color: ${base05};
+      opacity: .3;
+      float: left;
+      font-style: italic;
+    }
     .console .boolean {
       color: ${base0e};
       font-weight: bold;
     }
+    .console .empty {
+      color: ${base0e};
+      font-style: italic;
+    }
     .console .null {
       color: ${base0e};
-      font-weight: bold;
+      font-style: italic;
     }
     .console .string {
       color: ${base0a};
@@ -913,37 +923,60 @@ function randomId() {
   );
 }
 
+const INDENT = "  ";
+
+/**
+ * Convert a basic type or an object into a HTML string
+ */
 function asString(
   depth: number,
   value: any,
   options: { quote?: string } = {}
-): string {
-  if (depth > 5) return '<span class="sep">(...)</span>';
-
+): { text: string; itemCount: number; lineCount: number } {
   options.quote ??= '"';
+
+  //
+  // BOOLEAN
+  //
   if (typeof value === "boolean") {
-    return `<span class="boolean">${escapeHTML(String(value))}</span>`;
+    return {
+      text: `<span class="boolean">${escapeHTML(String(value))}</span>`,
+      itemCount: 1,
+      lineCount: 1,
+    };
   }
+  //
+  // NUMBER
+  //
   if (typeof value === "number") {
-    return `<span class="number">${escapeHTML(String(value))}</span>`;
+    return {
+      text: `<span class="number">${escapeHTML(String(value))}</span>`,
+      itemCount: 1,
+      lineCount: 1,
+    };
   }
+  //
+  // STRING
+  //
   if (typeof value === "string") {
     if (options.quote.length === 0) {
-      return escapeHTML(value);
+      return {
+        text: escapeHTML(value),
+        itemCount: 1,
+        lineCount: value.split(/\r\n|\r|\n/).length,
+      };
     }
-    return `<span class="string">${escapeHTML(
-      options.quote + value + options.quote
-    )}</span>`;
+    return {
+      text: `<span class="string">${escapeHTML(
+        options.quote + value + options.quote
+      )}</span>`,
+      itemCount: 1,
+      lineCount: value.split(/\r\n|\r|\n/).length,
+    };
   }
-  if (Array.isArray(value)) {
-    return (
-      "<span class='sep'>[</span>" +
-      value
-        .map((x) => asString(depth + 1, x))
-        .join("<span class='sep'>, </span>") +
-      "<span class='sep'>]</span>"
-    );
-  }
+  //
+  // FUNCTION
+  //
   if (typeof value === "function") {
     let functionValue = "";
     if (value.hasOwnProperty("toString")) {
@@ -951,11 +984,80 @@ function asString(
     } else {
       functionValue = escapeHTML(String(value));
     }
-    return `<span class="function">ƒ  ${functionValue}</span>`;
+    return {
+      text: `<span class="function">ƒ  ${functionValue}</span>`,
+      itemCount: 1,
+      lineCount: functionValue.split(/\r\n|\r|\n/).length,
+    };
   }
+
+  //
+  // NULL
+  //
   if (value === null) {
-    return `<span class="null">${escapeHTML(String(value))}</span>`;
+    return {
+      text: `<span class="null">${escapeHTML(String(value))}</span>`,
+      itemCount: 1,
+      lineCount: 1,
+    };
   }
+
+  // Avoid infinite recursions (e.g. `window.window`)
+  if (depth > 20) {
+    return {
+      text: '<span class="sep">(...)</span>',
+      itemCount: 1,
+      lineCount: 1,
+    };
+  }
+
+  //
+  // ARRAY
+  //
+  if (Array.isArray(value)) {
+    const result = [];
+    // To account for sparse array, we can't use map() (it skips over empty slots)
+    for (let i = 0; i < value.length; i++) {
+      if (Object.keys(value).includes(Number(i).toString())) {
+        result.push(asString(depth + 1, value[i]));
+      } else {
+        result.push({
+          text: '<span class="empty">empty</span>',
+          itemCount: 1,
+          lineCount: 1,
+        });
+      }
+    }
+    const itemCount = result.reduce((acc, val) => acc + val.itemCount, 0);
+    const lineCount = result.reduce((acc, val) => acc + val.lineCount, 0);
+    if (itemCount > 5) {
+      return {
+        text:
+          "<span class='sep'>[</span>\n" +
+          INDENT.repeat(depth + 1) +
+          result
+            .map((x, i) => '<span class="index">' + i + "</span>" + x.text)
+            .join("<span class='sep'>, </span>\n" + INDENT.repeat(depth + 1)) +
+          "\n" +
+          INDENT.repeat(depth) +
+          "<span class='sep'>]</span>",
+        itemCount,
+        lineCount: 2 + lineCount + itemCount,
+      };
+    }
+    return {
+      text:
+        "<span class='sep'>[</span>" +
+        result.map((x) => x.text).join("<span class='sep'>, </span>") +
+        "<span class='sep'>]</span>",
+      itemCount: Math.max(1, itemCount),
+      lineCount: Math.max(1, lineCount),
+    };
+  }
+
+  //
+  // OBJECT
+  //
   if (typeof value === "object") {
     const props = Object.keys(value);
 
@@ -966,39 +1068,80 @@ function asString(
     });
     if (props.length === 0 && typeof props.toString === "function") {
       const result = value.toString();
-      if (result === "[object Object]") return '<span class="sep">{}</span>';
-      return result;
+      if (result === "[object Object]")
+        return {
+          text: '<span class="sep">{}</span>',
+          itemCount: 1,
+          lineCount: 1,
+        };
+      return {
+        text: result,
+        itemCount: 1,
+        lineCount: result.split(/\r\n|\r|\n/).length,
+      };
     }
+
     const propStrings = props.sort().map((key) => {
       if (typeof value[key] === "object" && value[key] !== null) {
         let result = asString(depth + 1, value[key]);
-        if (result.length > 80) {
-          result = "<span class='sep'>(...)</span>";
+        if (result.itemCount > 500) {
+          result = {
+            text: "<span class='sep'>(...)</span>",
+            itemCount: 1,
+            lineCount: 1,
+          };
         }
-        return `<span class="property">${key}</span><span class='sep'>: </span>${result}`;
+        return {
+          text: `<span class="property">${key}</span><span class='sep'>: </span>${result.text}`,
+          itemCount: result.itemCount,
+          lineCount: result.lineCount,
+        };
       }
       if (typeof value[key] === "function") {
-        return `<span class="property">${key}</span></span><span class='sep'> : </span><span class='function'>ƒ (...)</span>`;
+        return {
+          text: `<span class="property">${key}</span></span><span class='sep'>: </span><span class='function'>ƒ (...)</span>`,
+          itemCount: 1,
+          lineCount: 1,
+        };
       }
-      return `<span class="property">${key}</span></span><span class='sep'> : </span>${asString(
-        depth + 1,
-        value[key]
-      )}`;
+      const result = asString(depth + 1, value[key]);
+      return {
+        text: `<span class="property">${key}</span></span><span class='sep'>: </span>${result.text}`,
+        itemCount: result.itemCount,
+        lineCount: result.lineCount,
+      };
     });
-    if (propStrings.length < 5) {
-      return (
-        "</span><span class='sep'>{</span>" +
-        propStrings.join("</span><span class='sep'>, </span>") +
-        "</span><span class='sep'>}</span>"
-      );
+    const itemCount = propStrings.reduce((acc, val) => acc + val.itemCount, 0);
+    const lineCount = propStrings.reduce((acc, val) => acc + val.lineCount, 0);
+    if (itemCount < 5) {
+      return {
+        text:
+          "<span class='sep'>{</span>" +
+          propStrings
+            .map((x) => x.text)
+            .join("</span><span class='sep'>, </span>") +
+          "<span class='sep'>}</span>",
+        itemCount,
+        lineCount,
+      };
     }
-    return (
-      "</span><span class='sep'>{</span>\n    " +
-      propStrings.join("</span><span class='sep'>,</span>\n    ") +
-      "\n</span><span class='sep'>}</span>"
-    );
+    return {
+      text:
+        "<span class='sep'>{</span>\n" +
+        INDENT.repeat(depth + 1) +
+        propStrings
+          .map((x) => x.text)
+          .join(
+            "</span><span class='sep'>,</span>\n" + INDENT.repeat(depth + 1)
+          ) +
+        "\n" +
+        INDENT.repeat(depth) +
+        "<span class='sep'>}</span>",
+      itemCount: itemCount,
+      lineCount: lineCount + 2,
+    };
   }
-  return String(value);
+  return { text: String(value), itemCount: 1, lineCount: 1 };
 }
 
 function interpolate(args: any[]): string {
@@ -1008,10 +1151,10 @@ function interpolate(args: any[]): string {
   if (typeof format === "string" && format.includes("%") && rest.length) {
     const string = format.replace(
       /(%[oscdif]|%(\d*)\.(\d*)[dif])/g,
-      (all, key, width = "", dp) => {
-        if (key === "%0") {
-          // string
-          return asString(0, rest.shift());
+      (all, key, width = "", dp): string => {
+        if (key === "%o") {
+          // object
+          return asString(0, rest.shift()).text;
         }
 
         if (key === "%s") {
@@ -1040,7 +1183,7 @@ function interpolate(args: any[]): string {
           return res;
         }
 
-        return asString(0, res).padStart(width, " ");
+        return asString(0, res).text.padStart(width, " ");
       }
     );
 
@@ -1049,11 +1192,11 @@ function interpolate(args: any[]): string {
 
   if (rest.length) {
     return (
-      asString(0, format, { quote: "" }) +
+      asString(0, format, { quote: "" }).text +
       rest.map((x) => asString(0, x, { quote: "" })).join("")
     );
   }
-  return asString(0, format, { quote: "" });
+  return asString(0, format, { quote: "" }).text;
 }
 
 function escapeHTML(s: string): string {

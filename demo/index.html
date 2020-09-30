@@ -20,11 +20,10 @@
 const mf = MathLive.makeMathField(document.getElementById('mathfield'), 
     {
         onContentDidChange: (mf) => {
-            const latex = mf.$text();
-            console.log(latex);
+            console.clear();
+            console.log(MathLive.latexToAST(mf.$text()));
         },
 });
-console.log(mf.getConfig().customVirtualKeyboardLayers);
 </div>
         <div slot="html">&lt;div id="mathfield"&gt;
     x=\frac{-b\pm \sqrt{b^2-4ac}}{2a}
