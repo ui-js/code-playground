@@ -1,8 +1,7 @@
 {
-  "name": "code-section",
+  "name": "@ui-js/code-playground",
   "version": "1.0.0",
   "description": "A web component to display editable, executable code",
-  "main": "index.js",
   "scripts": {
     "build": "bash ./scripts/build.sh",
     "dist": "bash ./scripts/build.sh production",
@@ -11,17 +10,21 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ui-js/code-section.git"
+    "url": "git+https://github.com/ui-js/code-playground.git"
   },
   "keywords": [
     "webcomponent"
   ],
+  "files": [
+    "/dist"
+  ],
+  "main": "./dist/code-playground.js",
   "author": "arno@arno.org",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/ui-js/code-section/issues"
+    "url": "https://github.com/ui-js/code-playground/issues"
   },
-  "homepage": "https://github.com/ui-js/code-section#readme",
+  "homepage": "https://github.com/ui-js/code-playground#readme",
   "devDependencies": {
     "@rbnlffl/rollup-plugin-eslint": "^1.1.2",
     "@rollup/plugin-node-resolve": "^9.0.0",
