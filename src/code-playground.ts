@@ -160,10 +160,14 @@ template.innerHTML = `
     }
     .console .error {
       display: block;
-      width: calc(100% - 8px);
-      padding: 4px;
-      background: ${RED};
+      width: calc(100% - 10px);
+      padding-right: 4px;
+      padding-top: 8px;
+      padding-bottom:8px;
+      padding-left: 6px;
+      background: rgba(204, 102, 102, .4);
       color: white;
+      border-left:  4px solid ${RED}
     }
     .console .warning {
       color: ${YELLOW}
@@ -535,10 +539,49 @@ const CONSOLE_MAX_LINES = 1000;
 // TODO: add styling for :host:not(:defined) to handle
 // the case where JavaScript is not enabled
 
+declare class ResizeObserver {
+  constructor(callback: ResizeObserverCallback);
+  observe: (target: Element, options?: ResizeObserverOptions) => void;
+  unobserve: (target: Element) => void;
+  disconnect: () => void;
+}
+
+type ResizeObserverBoxOptions =
+  | "border-box"
+  | "content-box"
+  | "device-pixel-content-box";
+
+interface ResizeObserverOptions {
+  box?: ResizeObserverBoxOptions;
+}
+
+type ResizeObserverCallback = (
+  entries: ResizeObserverEntry[],
+  observer: ResizeObserver
+) => void;
+
+interface ResizeObserverEntry {
+  readonly target: Element;
+  readonly contentRect: DOMRectReadOnly;
+  readonly borderBoxSize: ResizeObserverSize[];
+  readonly contentBoxSize: ResizeObserverSize[];
+  readonly devicePixelContentBoxSize: ResizeObserverSize[];
+}
+
+interface ResizeObserverSize {
+  readonly inlineSize: number;
+  readonly blockSize: number;
+}
+
+// interface Window {
+//   ResizeObserver: typeof ResizeObserver;
+// }
+
 export class CodeSection extends HTMLElement {
   dirty = false;
   containerId: string;
   moduleMap: { [module: string]: string };
+  resizeObserver: ResizeObserver;
 
   static get observedAttributes(): string[] {
     return ["activetab", "layout", "showlinenumbers"];
@@ -608,6 +651,15 @@ export class CodeSection extends HTMLElement {
         this.dirty = true;
         requestAnimationFrame(() => this.update());
       });
+
+    this.resizeObserver = new ResizeObserver(() => {
+      requestAnimationFrame(() => {
+        console.log("refreshing");
+        this.shadowRoot
+          .querySelectorAll("textarea + .CodeMirror")
+          .forEach((x) => x?.["CodeMirror"]?.refresh());
+      });
+    });
   }
 
   // The content of the code section has changed. Rebuild the tabs
@@ -666,12 +718,16 @@ export class CodeSection extends HTMLElement {
 
     // 4. Setup editors
     if (typeof CodeMirror !== "undefined") {
+      this.resizeObserver.disconnect();
       shadowRoot
         .querySelectorAll<HTMLTextAreaElement>(".tab .content textarea")
         .forEach((x: HTMLTextAreaElement) => {
           // Remove XML comments, including the <!-- htmlmin:ignore --> used to
           // indicate to terser to skip sections, so as to preserve the formatting.
           x.value = x.value.replace(/<!--.*-->\n?/g, "");
+
+          // Watch for re-layout and invoke CodeMirror refresh when they happen
+          this.resizeObserver.observe(x.parentElement);
 
           const lang = {
             javascript: "javascript",
@@ -795,7 +851,7 @@ export class CodeSection extends HTMLElement {
     window.onerror = (msg, url, line, _colno, error) => {
       if (url === window.location.href) {
         if (line === 0) {
-          if (typeof error.toString === "function") {
+          if (typeof error?.toString === "function") {
             this.pseudoConsole().error(msg + error.toString());
           } else {
             this.pseudoConsole().error(msg);
@@ -832,7 +888,10 @@ export class CodeSection extends HTMLElement {
     });
   }
 
-  pseudoConsole() {
+  pseudoConsole(): Console & {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    catch: (err: any) => void;
+  } {
     const shadowRoot = this.shadowRoot;
     // root ?? (document.currentScript.getRootNode() as HTMLElement);
     let console: HTMLElement = shadowRoot.querySelector(".result .console");
@@ -856,6 +915,7 @@ export class CodeSection extends HTMLElement {
       console.scrollTop = console.scrollHeight;
     };
     return {
+      ...window.console,
       assert: function (condition: boolean, ...args) {
         if (!condition) appendConsole(interpolate(args));
       },
@@ -1003,8 +1063,9 @@ export class CodeSection extends HTMLElement {
 
 function randomId() {
   return (
-    Date.now().toString(36).slice(-2) +
-    Math.floor(Math.random() * 0x186a0).toString(36)
+    "i" +
+    (Date.now().toString(36).slice(-2) +
+      Math.floor(Math.random() * 0x186a0).toString(36))
   );
 }
 
