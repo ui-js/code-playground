@@ -69,6 +69,7 @@ template.innerHTML = `
       background: ${base00};
     }
     textarea {
+      display: block;
       border: 1px solid rgba(0,0,0,.25);
       outline: none;
       resize: vertical;
@@ -92,6 +93,9 @@ template.innerHTML = `
       border-radius: 8px;
       padding: 8px;
       border: 1px solid rgba(0, 0, 0, .2);
+    }
+    .output textarea {
+      width: calc(100% - 16px);
     }
     .stack-layout .source, .stack-layout .result {
       width: auto;
@@ -334,7 +338,7 @@ template.innerHTML = `
       color: ${base05};
       border: 1px solid #111;
     }
-    .stack-layout button {
+    .stack-layout .button {
       color: #333;
       background: transparent;
       border: 1px solid #ccc;
@@ -691,6 +695,9 @@ export class CodeSection extends HTMLElement {
     // 5. Activate the previously active tab, or the first one
     this.activateTab(this.activeTab || tabs[0].dataset.name);
 
+    // 6. Run the playground
+    this.runPlayground();
+
     // Refresh the codemirror layouts
     // (important to get the linenumbers to display correctly)
     setTimeout(
@@ -698,11 +705,8 @@ export class CodeSection extends HTMLElement {
         shadowRoot
           .querySelectorAll("textarea + .CodeMirror")
           .forEach((x) => x?.["CodeMirror"]?.refresh()),
-      32
+      128
     );
-
-    // 6. Run the playground
-    this.runPlayground();
   }
 
   activateTab(name: string): void {
