@@ -5,8 +5,8 @@ const base02 = "#373b41";
 const base03 = "#969896";
 const base04 = "#b4b7b4";
 const base05 = "#c5c8c6"; // base05
-const base06 = "#e0e0e0";
-const base07 = "#ffffff";
+// const base06 = "#e0e0e0";
+// const base07 = "#ffffff";
 const base0c = "#cc6666"; // base08
 const base09 = "#de935f";
 const base0a = "#f0c674";
@@ -14,12 +14,12 @@ const base0b = "#b5bd68";
 const base08 = "#8abeb7"; // base0c
 const base0d = "#81a2be"; // base0d
 const base0e = "#b294bb";
-const base0f = "#a3685a";
+// const base0f = "#a3685a";
 
 const RED = base0c;
 const YELLOW = base0a;
-const BLUE = base0d;
-const GREEN = base0b;
+// const BLUE = base0d;
+// const GREEN = base0b;
 
 const TAB_HEIGHT = 36;
 const TAB_WIDTH = 150;
@@ -126,6 +126,7 @@ template.innerHTML = `
       color: ${base05};
       opacity: .3;
       float: left;
+      width: 0;
       font-style: italic;
     }
     .console .boolean {
@@ -178,10 +179,7 @@ template.innerHTML = `
       --tab-indicator-offset: 0;
     }
     .stack-layout .tabs {
-      /* position: absolute; */
       flex-flow: column;
-      /* height: max-content; */
-      /* min-height: min-content; */
     }
     .stack-layout .tab {
       height: auto;
@@ -193,7 +191,6 @@ template.innerHTML = `
     .stack-layout .tab:first-child, .stack-layout .tab:last-child {
       border: none;
       border-radius: 0;
-      background: ${base02};
       padding-left: 8px;
       padding-right: 8px;
       padding-bottom: .5em;
@@ -353,9 +350,12 @@ template.innerHTML = `
     }
     .button:enabled:hover, .button:enabled:active {
       color: #0066ce;
+      border: 1px solid #0066ce;
     }
     .button:enabled:active {
-        background: #0066ce;
+      color: #fff;
+      background: #0066ce;
+      border: 1px solid #0066ce;
     }
     .mathfield {
       display: block;
@@ -502,7 +502,7 @@ template.innerHTML = `
     .cm-s-tomorrow-night .CodeMirror-gutters { background: ${base00}; border-right: 0px; }
     .cm-s-tomorrow-night .CodeMirror-guttermarker { color: ${base0c}; }
     .cm-s-tomorrow-night .CodeMirror-guttermarker-subtle { color: ${base03}; }
-    .cm-s-tomorrow-night .CodeMirror-linenumber { color: ${base04}; }
+    .cm-s-tomorrow-night .CodeMirror-linenumber { color: ${base04}; opacity: .4; }
     .cm-s-tomorrow-night .CodeMirror-cursor { border-left: 1px solid ${base0d}; }
     
     .cm-s-tomorrow-night span.cm-comment { color: ${base09}; }
@@ -537,7 +537,7 @@ export class CodeSection extends HTMLElement {
   moduleMap: { [module: string]: string };
 
   static get observedAttributes(): string[] {
-    return ["activetab", "layout"];
+    return ["activetab", "layout", "showlinenumbers"];
   }
 
   attributeChangedCallback(
@@ -554,6 +554,12 @@ export class CodeSection extends HTMLElement {
       this.shadowRoot
         .querySelector<HTMLElement>(":host > div")
         .classList.toggle("stack-layout", newValue === "stack");
+    } else if (name === "showlinenumbers" && oldValue !== newValue) {
+      this.shadowRoot
+        .querySelectorAll("textarea + .CodeMirror")
+        .forEach((x) =>
+          x?.["CodeMirror"]?.setLineNumbers(this.showLineNumbers)
+        );
     }
   }
   constructor() {
@@ -654,10 +660,7 @@ export class CodeSection extends HTMLElement {
       });
     }
 
-    // 4. Activate the previously active tab, or the first one
-    this.activateTab(this.activeTab || tabs[0].dataset.name);
-
-    // 5. Setup editors
+    // 4. Setup editors
     if (typeof CodeMirror !== "undefined") {
       shadowRoot
         .querySelectorAll<HTMLTextAreaElement>(".tab .content textarea")
@@ -671,8 +674,9 @@ export class CodeSection extends HTMLElement {
             css: "css",
             html: "xml",
           }[x.dataset.language ?? "javascript"];
+
           const editor = CodeMirror.fromTextArea(x, {
-            lineNumbers: false,
+            lineNumbers: this.showLineNumbers,
             lineWrapping: true,
             mode: lang,
             theme: "tomorrow-night",
@@ -684,18 +688,34 @@ export class CodeSection extends HTMLElement {
         });
     }
 
+    // 5. Activate the previously active tab, or the first one
+    this.activateTab(this.activeTab || tabs[0].dataset.name);
+
+    // Refresh the codemirror layouts
+    // (important to get the linenumbers to display correctly)
+    setTimeout(
+      () =>
+        shadowRoot
+          .querySelectorAll("textarea + .CodeMirror")
+          .forEach((x) => x?.["CodeMirror"]?.refresh()),
+      32
+    );
+
     // 6. Run the playground
     this.runPlayground();
   }
 
-  activateTab(name) {
+  activateTab(name: string): void {
     const activeTab: HTMLElement =
       this.shadowRoot.querySelector<HTMLElement>(`[data-name=${name}]`) ??
       this.shadowRoot.querySelectorAll<HTMLElement>(".tab")[0];
+
     if (!activeTab) return;
+
     activeTab.querySelector<HTMLInputElement>(
       'input[type="radio"]'
     ).checked = true;
+
     this.shadowRoot
       .querySelector<HTMLElement>(".tabs")
       .style.setProperty(
@@ -705,6 +725,11 @@ export class CodeSection extends HTMLElement {
             .offsetLeft +
           "px"
       );
+    requestAnimationFrame(() =>
+      activeTab
+        .querySelector("textarea + .CodeMirror")
+        ?.["CodeMirror"]?.refresh()
+    );
   }
 
   runPlayground(): void {
@@ -943,17 +968,31 @@ export class CodeSection extends HTMLElement {
   // Property/attributes
   //
 
-  // 'activetab' is a the name of the currently visible tab
+  // 'activetab' is the name of the currently visible tab
   get activeTab(): string {
     return this.hasAttribute("activetab") ? this.getAttribute("activetab") : "";
   }
 
   set activeTab(val: string) {
-    // Reflect the value of the activeTab property as an HTML attribute.
     if (val) {
       this.setAttribute("activetab", val);
     } else {
       this.removeAttribute("activetab");
+    }
+  }
+
+  // 'showlinenumbers' is true if line numbers should be displayed
+  get showLineNumbers(): boolean {
+    return this.hasAttribute("showlinenumbers")
+      ? this.getAttribute("showlinenumbers") === "true"
+      : true;
+  }
+
+  set showLineNumbers(val: boolean) {
+    if (val) {
+      this.setAttribute("showlinenumbers", val ? "true" : "false");
+    } else {
+      this.removeAttribute("showlinenumbers");
     }
   }
 }
@@ -972,7 +1011,7 @@ const INDENT = "  ";
  */
 function asString(
   depth: number,
-  value: any,
+  value: unknown,
   options: { quote?: string } = {}
 ): { text: string; itemCount: number; lineCount: number } {
   options.quote ??= '"';
@@ -1071,8 +1110,11 @@ function asString(
       }
     }
     const itemCount = result.reduce((acc, val) => acc + val.itemCount, 0);
-    const lineCount = result.reduce((acc, val) => acc + val.lineCount, 0);
-    if (itemCount > 5) {
+    const lineCount = result.reduce(
+      (acc, val) => Math.max(acc, val.lineCount),
+      0
+    );
+    if (itemCount > 5 || lineCount > 1) {
       return {
         text:
           "<span class='sep'>[</span>\n" +
@@ -1084,7 +1126,7 @@ function asString(
           INDENT.repeat(depth) +
           "<span class='sep'>]</span>",
         itemCount,
-        lineCount: 2 + lineCount + itemCount,
+        lineCount: 2 + result.reduce((acc, val) => acc + val.lineCount, 0),
       };
     }
     return {
@@ -1093,7 +1135,7 @@ function asString(
         result.map((x) => x.text).join("<span class='sep'>, </span>") +
         "<span class='sep'>]</span>",
       itemCount: Math.max(1, itemCount),
-      lineCount: Math.max(1, lineCount),
+      lineCount: 1,
     };
   }
 
@@ -1186,7 +1228,7 @@ function asString(
   return { text: String(value), itemCount: 1, lineCount: 1 };
 }
 
-function interpolate(args: any[]): string {
+function interpolate(args: unknown[]): string {
   const format = args[0];
   const rest = args.slice(1);
 
@@ -1201,7 +1243,7 @@ function interpolate(args: any[]): string {
 
         if (key === "%s") {
           // string
-          return rest.shift();
+          return rest.shift() as string;
         }
 
         if (key === "%c") {
@@ -1211,13 +1253,13 @@ function interpolate(args: any[]): string {
         const value = rest.shift();
         let res = null;
 
-        if (key.substr(-1) === "f") {
+        if (key.substr(-1) === "f" && typeof value === "number") {
           if (isNaN(parseInt(dp, 10))) {
             res = value;
           } else {
             res = value.toFixed(dp);
           }
-        } else {
+        } else if (typeof value === "string") {
           res = parseInt(value, 10);
         }
 

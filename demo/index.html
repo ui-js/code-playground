@@ -10,7 +10,7 @@
 </head>
 
 <body>
-    <code-playground layout="stack">
+    <code-playground layout="stack" showlinenumbers="true">
         <script>
             moduleMap = {
                 mathlive: "//unpkg.com/mathlive/dist/mathlive.mjs",
@@ -24,6 +24,7 @@ const mf = MathLive.makeMathField(document.getElementById('mathfield'),
             console.log(MathLive.latexToAST(mf.$text()));
         },
 });
+console.log(mf.config);
 </div>
         <div slot="html">&lt;div id="mathfield"&gt;
     x=\frac{-b\pm \sqrt{b^2-4ac}}{2a}
