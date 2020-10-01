@@ -96,9 +96,17 @@ template.innerHTML = `
     .stack-layout .source, .stack-layout .result {
       width: auto;
       margin: 0;
+      background: transparent
+    }
+    .stack-layout .source {
+      border: 1px solid rgba(0, 0, 0, .2);
+      padding: 0;
     }
     .stack-layout .result  {
       margin-top: 2em;
+    }
+    .stack-layout [type=radio]:checked ~ label {
+      color: #666;
     }
     .console {
       max-height: 50vh;
@@ -177,6 +185,7 @@ template.innerHTML = `
     }
     .stack-layout .tab {
       height: auto;
+      background: transparent;
     }
     .stack-layout .tab:first-of-type:after {
       display: none;
@@ -203,13 +212,18 @@ template.innerHTML = `
       top: auto;
       left: auto;
       bottom: auto;
+      padding-left: 1em;
+      background: ${base00}
     }
     .stack-layout .tab > label {
       display: block;
       position: relative;
-      height: 2em;
+      height: auto;
       text-align: left;
-      padding-left: .5em;
+      padding-left: 1em;
+      padding-top: 1em;
+      padding-bottom: .5em;
+      color: #666;
     }
     .stack-layout .tab > input[type="radio"] {
       visibility: hidden;
@@ -296,11 +310,21 @@ template.innerHTML = `
       z-index: 1;
       visibility: visible;
     }
+    .buttons {
+      display: flex;
+      justify-content: space-between;
+      padding-left: 1em;
+      padding-right: 1em;
+      padding-bottom: .5em;
+    }
     .button {
       display: inline-block;
       margin-bottom: 0.25em;
       padding: 0.5em 1em;
-      font-size: 1rem;
+      font-size: 14px;
+      min-height: 30px;
+      margin-top: 6px;
+      margin-bottom: 6px;
       font-weight: 700;
       text-align: center;
       text-decoration: none;
@@ -313,6 +337,11 @@ template.innerHTML = `
       color: ${base05};
       border: 1px solid #111;
     }
+    .stack-layout button {
+      color: #333;
+      background: transparent;
+      border: 1px solid #ccc;
+    }
     .button:disabled {
       opacity: .5;
     }
@@ -323,10 +352,10 @@ template.innerHTML = `
       vertical-align: -.12em;
     }
     .button:enabled:hover, .button:enabled:active {
-      color: #fff;
+      color: #0066ce;
     }
     .button:enabled:active {
-        background: ${base00};
+        background: #0066ce;
     }
     .mathfield {
       display: block;
