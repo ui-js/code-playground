@@ -69,17 +69,29 @@ template.innerHTML = `
       background: ${base00};
     }
     textarea {
-      color: ${base05};
-      background: ${base00};
-      border: none;
+      border: 1px solid rgba(0,0,0,.25);
       outline: none;
       resize: vertical;
       width: 100%;
+      min-height: 4em;
+      font-family: 'JetBrains Mono', 'IBM Plex Mono', 'Fira Code', 'Source Code Pro',  monospace;
+      font-size: 16px;
+      line-height: 1.2;
+    }
+    .source textarea {
+      color: ${base05};
+      background: ${base00};
+      border: none;
       height: 100%;
     }
     .result {
       width: calc(50% - .5em);
       margin-left: .5em;
+    }
+    .output {
+      border-radius: 8px;
+      padding: 8px;
+      border: 1px solid rgba(0, 0, 0, .2);
     }
     .stack-layout .source, .stack-layout .result {
       width: auto;
@@ -89,14 +101,15 @@ template.innerHTML = `
       margin-top: 2em;
     }
     .console {
-      max-height: 300px;
+      max-height: 50vh;
       padding: 8px;
       border-radius: 8px;
       overflow: auto;
       font-size: 14px;
-      color: ${base09};
+      color: ${base05};
       background: ${base00};
       white-space: pre-wrap;
+      border: 1px solid rgba(0, 0, 0, .2);
     }
     .console .sep {
       color: ${base05};
