@@ -16,7 +16,7 @@
                 mathlive: "//unpkg.com/mathlive/dist/mathlive.mjs",
             };
         </script>
-        <div slot="javascript">import MathLive from 'mathlive';
+        <!-- <div slot="javascript">import MathLive from 'mathlive';
 const mf = MathLive.makeMathField(document.getElementById('mathfield'), 
     {
         onContentDidChange: (mf) => {
@@ -25,10 +25,12 @@ const mf = MathLive.makeMathField(document.getElementById('mathfield'),
         },
 });
 console.log(mf.config);
-</div>
-        <div slot="html">&lt;div id="mathfield"&gt;
+</div> -->
+        <div slot="html">&lt;script src="//unpkg.com/mathlive/dist/mathlive.min.js"&gt;&lt;/script&gt;
+&lt;script&gt;console.log("Hello world");&lt;/script&gt;
+&lt;math-field id="mathfield"&gt;
     x=\frac{-b\pm \sqrt{b^2-4ac}}{2a}
-&lt;/div&gt;</div>
+&lt;/math-field&gt;</div>
 
     </code-playground>
 

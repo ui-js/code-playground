@@ -24,8 +24,8 @@ const YELLOW = base0a;
 const TAB_HEIGHT = 36;
 const TAB_WIDTH = 150;
 
-const template = document.createElement("template");
-template.innerHTML = `
+const TEMPLATE = document.createElement("template");
+TEMPLATE.innerHTML = `
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/codemirror.min.css">
 <style>
     :host {
@@ -181,7 +181,6 @@ template.innerHTML = `
       display: flex;
       flex-flow: row;
       justify-content: center;
-      min-height: 200px;
       height: 100%;
       clear: both;
       --tab-indicator-offset: 0;
@@ -218,7 +217,8 @@ template.innerHTML = `
       left: auto;
       bottom: auto;
       padding-left: 1em;
-      background: ${base00}
+      background: ${base00};
+      overflow: hidden;
     }
     .stack-layout .tab > label {
       display: block;
@@ -536,9 +536,6 @@ template.innerHTML = `
 
 const CONSOLE_MAX_LINES = 1000;
 
-// TODO: add styling for :host:not(:defined) to handle
-// the case where JavaScript is not enabled
-
 declare class ResizeObserver {
   constructor(callback: ResizeObserverCallback);
   observe: (target: Element, options?: ResizeObserverOptions) => void;
@@ -616,7 +613,7 @@ export class CodeSection extends HTMLElement {
     }
     this.moduleMap = window["moduleMap"] ?? {};
     this.attachShadow({ mode: "open" });
-    this.shadowRoot.appendChild(template.content.cloneNode(true));
+    this.shadowRoot.appendChild(TEMPLATE.content.cloneNode(true));
     const container = document.createElement("div");
     this.containerId = randomId();
     container.id = this.containerId;
@@ -654,7 +651,6 @@ export class CodeSection extends HTMLElement {
 
     this.resizeObserver = new ResizeObserver(() => {
       requestAnimationFrame(() => {
-        console.log("refreshing");
         this.shadowRoot
           .querySelectorAll("textarea + .CodeMirror")
           .forEach((x) => x?.["CodeMirror"]?.refresh());
@@ -708,8 +704,14 @@ export class CodeSection extends HTMLElement {
     // 3. Listen to tab activation
     const tabs = shadowRoot.querySelectorAll<HTMLElement>(".tab");
     if (tabs.length <= 1) {
-      tabs.forEach((x: HTMLElement) => (x.style.visibility = "hidden"));
-      shadowRoot.querySelector<HTMLElement>(".tab .content").style.top = "0";
+      tabs.forEach(
+        (x) =>
+          (x.querySelector<HTMLElement>(".tab > label").style.display = "none")
+      );
+      const visibleTab = shadowRoot.querySelector<HTMLElement>(".tab .content");
+      visibleTab.style.marginTop = "8px";
+      visibleTab.style.borderTopLeftRadius = "8px";
+      visibleTab.style.borderTopRightRadius = "8px";
     } else {
       shadowRoot.querySelectorAll(".tab label").forEach((x) => {
         x.addEventListener("click", activateTab);
@@ -797,12 +799,12 @@ export class CodeSection extends HTMLElement {
     const result = section.querySelector(".result");
 
     // Remove all the script tags that might be there.
-    result.querySelectorAll("script").forEach((x) => {
+    result.querySelectorAll(".result > script").forEach((x) => {
       result.removeChild(x);
     });
 
     // Remove all the consoles that might be there.
-    result.querySelectorAll(".console").forEach((x) => {
+    result.querySelectorAll(".result > .console").forEach((x) => {
       result.removeChild(x);
     });
 
@@ -820,6 +822,32 @@ export class CodeSection extends HTMLElement {
         )?.value ?? "";
     }
     section.querySelector(".output").innerHTML = htmlContent;
+
+    // If the HTML content contains any <script> tags, extract them
+    const scriptTags = htmlContent.match(/<script.*>.*<\/script>/g);
+    scriptTags.forEach((x) => {
+      const m = x.match(/<script([^>]*?)>(.*)<\/script>/);
+      const regex = new RegExp(
+        "[\\s\\r\\t\\n]*([a-z0-9\\-_]+)[\\s\\r\\t\\n]*=[\\s\\r\\t\\n]*(['\"])((?:\\\\\\2|(?!\\2).)*)\\2",
+        "ig"
+      );
+      const attributes = {};
+      let match;
+      while ((match = regex.exec(m[1]))) {
+        attributes[match[1]] = match[3];
+      }
+      const newScript = document.createElement("script");
+      Object.keys(attributes).forEach((x) => (newScript[x] = attributes[x]));
+      try {
+        newScript.appendChild(
+          document.createTextNode(this.processLiveCodeJavascript(m[2]))
+        );
+        result.appendChild(newScript);
+      } catch (err) {
+        // If there's a syntax error in the script, catch it here
+        this.pseudoConsole().error(err.message);
+      }
+    });
 
     // Add a new script tag
     const jsEditor = section.querySelector(
@@ -981,25 +1009,27 @@ export class CodeSection extends HTMLElement {
    * - wrap in a try/catch block
    */
   processLiveCodeJavascript(script: string): string {
+    if (!script) return "";
+    const jsID = randomJavaScriptId();
     // Replace document.querySelector.* et al with section.querySelector.*
     script = script.replace(
       /([^a-zA-Z0-9_-]?)document.querySelector\s*\(/g,
-      "$1container.querySelector("
+      "$1container" + jsID + ".querySelector("
     );
     script = script.replace(
       /([^a-zA-Z0-9_-]?)document.querySelectorAll\s*\(/g,
-      "$1container.querySelectorAll("
+      "$1container" + jsID + ".querySelectorAll("
     );
 
     script = script.replace(
       /([^a-zA-Z0-9_-]?)document.getElementById\s*\(/g,
-      "$1container.querySelector('#' + "
+      "$1container" + jsID + ".querySelector('#' + "
     );
 
     // Replace console.* with pseudoConsole.*
     script = script.replace(
       /([^a-zA-Z0-9_-])?console\./g,
-      "$1host.pseudoConsole()."
+      "$1shadowRoot" + jsID + ".host.pseudoConsole()."
     );
 
     // Extract import (can't be inside a try...catch block)
@@ -1021,10 +1051,9 @@ export class CodeSection extends HTMLElement {
           return x[0];
         })
         .join("\n") +
-      `const shadowRoot = document.querySelector("#${this.id}").shadowRoot;` +
-      `const host = shadowRoot.host;` +
-      `const container = shadowRoot.getElementById("${this.containerId}");` +
-      `try{${script}} catch(err) { host.pseudoConsole().catch(err) }`
+      `const shadowRoot${jsID} = document.querySelector("#${this.id}").shadowRoot;` +
+      `const container${jsID} = shadowRoot${jsID}.getElementById("${this.containerId}");` +
+      `try{${script}} catch(err) { shadowRoot${jsID}.host.pseudoConsole().catch(err) }`
     );
   }
 
@@ -1066,6 +1095,13 @@ function randomId() {
     "i" +
     (Date.now().toString(36).slice(-2) +
       Math.floor(Math.random() * 0x186a0).toString(36))
+  );
+}
+
+function randomJavaScriptId() {
+  return (
+    Date.now().toString(26).slice(-2) +
+    Math.floor(Math.random() * 0x186a0).toString(26)
   );
 }
 
