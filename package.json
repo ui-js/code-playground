@@ -26,6 +26,7 @@
   },
   "homepage": "https://github.com/ui-js/code-playground#readme",
   "devDependencies": {
+    "@cortex-js/prettier-config": "^1.0.0",
     "@rbnlffl/rollup-plugin-eslint": "^1.1.4",
     "@rollup/plugin-node-resolve": "^10.0.0",
     "@types/codemirror": "0.0.100",
@@ -49,6 +50,7 @@
     "rollup-plugin-typescript2": "^0.29.0",
     "typescript": "^4.1.2"
   },
+  "prettier": "@cortex-js/prettier-config",
   "dependencies": {
     "tslib": "^2.0.3"
   }

@@ -1,20 +1,20 @@
 var _a;
 /* tomorrow-night */
-const base00 = "#35434e"; // was #1d1f21;
-const base01 = "#282a2e";
-const base02 = "#373b41";
-const base03 = "#969896";
-const base04 = "#b4b7b4";
-const base05 = "#c5c8c6"; // base05
+const base00 = '#35434e'; // was #1d1f21;
+const base01 = '#282a2e';
+const base02 = '#373b41';
+const base03 = '#969896';
+const base04 = '#b4b7b4';
+const base05 = '#c5c8c6'; // base05
 // const base06 = "#e0e0e0";
 // const base07 = "#ffffff";
-const base0c = "#cc6666"; // base08
-const base09 = "#de935f";
-const base0a = "#f0c674";
-const base0b = "#b5bd68";
-const base08 = "#8abeb7"; // base0c
-const base0d = "#81a2be"; // base0d
-const base0e = "#b294bb";
+const base0c = '#cc6666'; // base08
+const base09 = '#de935f';
+const base0a = '#f0c674';
+const base0b = '#b5bd68';
+const base08 = '#8abeb7'; // base0c
+const base0d = '#81a2be'; // base0d
+const base0e = '#b294bb';
 // const base0f = "#a3685a";
 const RED = base0c;
 const YELLOW = base0a;
@@ -22,7 +22,7 @@ const YELLOW = base0a;
 // const GREEN = base0b;
 const TAB_HEIGHT = 36;
 const TAB_WIDTH = 150;
-const TEMPLATE = document.createElement("template");
+const TEMPLATE = document.createElement('template');
 TEMPLATE.innerHTML = `
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/codemirror.min.css">
 <style>
@@ -543,10 +543,11 @@ class CodeSection extends HTMLElement {
         if (!this.id) {
             this.id = randomId();
         }
-        this.moduleMap = (_a = window["moduleMap"]) !== null && _a !== void 0 ? _a : {};
-        this.attachShadow({ mode: "open" });
+        this.moduleMap =
+            (_a = window['moduleMap']) !== null && _a !== void 0 ? _a : {};
+        this.attachShadow({ mode: 'open' });
         this.shadowRoot.appendChild(TEMPLATE.content.cloneNode(true));
-        const container = document.createElement("div");
+        const container = document.createElement('div');
         this.containerId = randomId();
         container.id = this.containerId;
         container.innerHTML = `
@@ -562,77 +563,90 @@ class CodeSection extends HTMLElement {
         this.shadowRoot.appendChild(container);
         // Add event handler for "run" and "reset" button
         this.shadowRoot
-            .getElementById("run-button")
-            .addEventListener("click", (_ev) => {
-            this.runPlayground();
-        });
+            .getElementById('run-button')
+            .addEventListener('click', (_ev) => {
+                this.runPlayground();
+            });
         this.shadowRoot
-            .getElementById("reset-button")
-            .addEventListener("click", (_ev) => {
-            this.resetPlayground();
-        });
+            .getElementById('reset-button')
+            .addEventListener('click', (_ev) => {
+                this.resetPlayground();
+            });
         // Track insertion/changes to slots
         this.shadowRoot
-            .querySelector(".original-content")
-            .addEventListener("slotchange", (_ev) => {
-            this.dirty = true;
-            requestAnimationFrame(() => this.update());
-        });
+            .querySelector('.original-content')
+            .addEventListener('slotchange', (_ev) => {
+                this.dirty = true;
+                requestAnimationFrame(() => this.update());
+            });
         this.resizeObserver = new ResizeObserver(() => {
             requestAnimationFrame(() => {
                 this.shadowRoot
-                    .querySelectorAll("textarea + .CodeMirror")
-                    .forEach((x) => { var _a; return (_a = x === null || x === void 0 ? void 0 : x["CodeMirror"]) === null || _a === void 0 ? void 0 : _a.refresh(); });
+                    .querySelectorAll('textarea + .CodeMirror')
+                    .forEach((x) => {
+                        var _a;
+                        return (_a =
+                            x === null || x === void 0
+                                ? void 0
+                                : x['CodeMirror']) === null || _a === void 0
+                            ? void 0
+                            : _a.refresh();
+                    });
             });
         });
     }
     static get observedAttributes() {
-        return ["activetab", "layout", "showlinenumbers"];
+        return ['activetab', 'layout', 'showlinenumbers'];
     }
     attributeChangedCallback(name, oldValue, newValue) {
-        if (name === "activetab" && oldValue !== newValue) {
+        if (name === 'activetab' && oldValue !== newValue) {
             this.activateTab(newValue);
-        }
-        else if (name === "layout" && oldValue !== newValue) {
+        } else if (name === 'layout' && oldValue !== newValue) {
             this.shadowRoot
-                .querySelector(":host > div")
-                .classList.toggle("tab-layout", newValue !== "stack");
+                .querySelector(':host > div')
+                .classList.toggle('tab-layout', newValue !== 'stack');
             this.shadowRoot
-                .querySelector(":host > div")
-                .classList.toggle("stack-layout", newValue === "stack");
-        }
-        else if (name === "showlinenumbers" && oldValue !== newValue) {
+                .querySelector(':host > div')
+                .classList.toggle('stack-layout', newValue === 'stack');
+        } else if (name === 'showlinenumbers' && oldValue !== newValue) {
             this.shadowRoot
-                .querySelectorAll("textarea + .CodeMirror")
-                .forEach((x) => { var _a; return (_a = x === null || x === void 0 ? void 0 : x["CodeMirror"]) === null || _a === void 0 ? void 0 : _a.setLineNumbers(this.showLineNumbers); });
+                .querySelectorAll('textarea + .CodeMirror')
+                .forEach((x) => {
+                    var _a;
+                    return (_a =
+                        x === null || x === void 0
+                            ? void 0
+                            : x['CodeMirror']) === null || _a === void 0
+                        ? void 0
+                        : _a.setLineNumbers(this.showLineNumbers);
+                });
         }
     }
     // The content of the code section has changed. Rebuild the tabs
     update() {
-        if (!this.dirty)
-            return;
+        if (!this.dirty) return;
         this.dirty = false;
         const shadowRoot = this.shadowRoot;
         // eslint-disable-next-line @typescript-eslint/no-this-alias
         const self = this;
         const activateTab = function (ev) {
             const tab = ev.target;
-            if (tab.tagName === "LABEL") {
+            if (tab.tagName === 'LABEL') {
                 self.activateTab(tab.parentNode.dataset.name);
             }
         };
         // 1. Remove the event handlers
-        shadowRoot.querySelectorAll(".tab").forEach((x) => {
-            x.removeEventListener("click", activateTab);
+        shadowRoot.querySelectorAll('.tab').forEach((x) => {
+            x.removeEventListener('click', activateTab);
         });
         // 2. Collect the content of each tab
-        const slots = shadowRoot.querySelectorAll(".original-content slot");
-        let content = "";
+        const slots = shadowRoot.querySelectorAll('.original-content slot');
+        let content = '';
         slots.forEach((slot) => {
             const text = slot
                 .assignedNodes()
                 .map((node) => node.innerHTML)
-                .join("");
+                .join('');
             if (text) {
                 const tabId = randomId();
                 const language = slot.name;
@@ -645,49 +659,54 @@ class CodeSection extends HTMLElement {
     </div>`;
             }
         });
-        shadowRoot.querySelector(".tabs").innerHTML = content;
+        shadowRoot.querySelector('.tabs').innerHTML = content;
         // 3. Listen to tab activation
-        const tabs = shadowRoot.querySelectorAll(".tab");
+        const tabs = shadowRoot.querySelectorAll('.tab');
         if (tabs.length <= 1) {
-            tabs.forEach((x) => (x.querySelector(".tab > label").style.display = "none"));
-            const visibleTab = shadowRoot.querySelector(".tab .content");
-            visibleTab.style.marginTop = "8px";
-            visibleTab.style.borderTopLeftRadius = "8px";
-            visibleTab.style.borderTopRightRadius = "8px";
-        }
-        else {
-            shadowRoot.querySelectorAll(".tab label").forEach((x) => {
-                x.addEventListener("click", activateTab);
+            tabs.forEach(
+                (x) => (x.querySelector('.tab > label').style.display = 'none')
+            );
+            const visibleTab = shadowRoot.querySelector('.tab .content');
+            visibleTab.style.marginTop = '8px';
+            visibleTab.style.borderTopLeftRadius = '8px';
+            visibleTab.style.borderTopRightRadius = '8px';
+        } else {
+            shadowRoot.querySelectorAll('.tab label').forEach((x) => {
+                x.addEventListener('click', activateTab);
             });
         }
         // 4. Setup editors
-        if (typeof CodeMirror !== "undefined") {
+        if (typeof CodeMirror !== 'undefined') {
             this.resizeObserver.disconnect();
             shadowRoot
-                .querySelectorAll(".tab .content textarea")
+                .querySelectorAll('.tab .content textarea')
                 .forEach((x) => {
-                var _a;
-                // Remove XML comments, including the <!-- htmlmin:ignore --> used to
-                // indicate to terser to skip sections, so as to preserve the formatting.
-                x.value = x.value.replace(/<!--.*-->\n?/g, "");
-                // Watch for re-layout and invoke CodeMirror refresh when they happen
-                this.resizeObserver.observe(x.parentElement);
-                const lang = {
-                    javascript: "javascript",
-                    css: "css",
-                    html: "xml",
-                }[(_a = x.dataset.language) !== null && _a !== void 0 ? _a : "javascript"];
-                const editor = CodeMirror.fromTextArea(x, {
-                    lineNumbers: this.showLineNumbers,
-                    lineWrapping: true,
-                    mode: lang,
-                    theme: "tomorrow-night",
+                    var _a;
+                    // Remove XML comments, including the <!-- htmlmin:ignore --> used to
+                    // indicate to terser to skip sections, so as to preserve the formatting.
+                    x.value = x.value.replace(/<!--.*-->\n?/g, '');
+                    // Watch for re-layout and invoke CodeMirror refresh when they happen
+                    this.resizeObserver.observe(x.parentElement);
+                    const lang = {
+                        javascript: 'javascript',
+                        css: 'css',
+                        html: 'xml',
+                    }[
+                        (_a = x.dataset.language) !== null && _a !== void 0
+                            ? _a
+                            : 'javascript'
+                    ];
+                    const editor = CodeMirror.fromTextArea(x, {
+                        lineNumbers: this.showLineNumbers,
+                        lineWrapping: true,
+                        mode: lang,
+                        theme: 'tomorrow-night',
+                    });
+                    editor.setSize('100%', '100%');
+                    editor.on('change', () => {
+                        this.editorContentChanged();
+                    });
                 });
-                editor.setSize("100%", "100%");
-                editor.on("change", () => {
-                    this.editorContentChanged();
-                });
-            });
         }
         // 5. Activate the previously active tab, or the first one
         this.activateTab(this.activeTab || tabs[0].dataset.name);
@@ -695,84 +714,139 @@ class CodeSection extends HTMLElement {
         this.runPlayground();
         // Refresh the codemirror layouts
         // (important to get the linenumbers to display correctly)
-        setTimeout(() => shadowRoot
-            .querySelectorAll("textarea + .CodeMirror")
-            .forEach((x) => { var _a; return (_a = x === null || x === void 0 ? void 0 : x["CodeMirror"]) === null || _a === void 0 ? void 0 : _a.refresh(); }), 128);
+        setTimeout(
+            () =>
+                shadowRoot
+                    .querySelectorAll('textarea + .CodeMirror')
+                    .forEach((x) => {
+                        var _a;
+                        return (_a =
+                            x === null || x === void 0
+                                ? void 0
+                                : x['CodeMirror']) === null || _a === void 0
+                            ? void 0
+                            : _a.refresh();
+                    }),
+            128
+        );
     }
     activateTab(name) {
         var _a;
-        const activeTab = (_a = this.shadowRoot.querySelector(`[data-name=${name}]`)) !== null && _a !== void 0 ? _a : this.shadowRoot.querySelectorAll(".tab")[0];
-        if (!activeTab)
-            return;
+        const activeTab =
+            (_a = this.shadowRoot.querySelector(`[data-name=${name}]`)) !==
+                null && _a !== void 0
+                ? _a
+                : this.shadowRoot.querySelectorAll('.tab')[0];
+        if (!activeTab) return;
         activeTab.querySelector('input[type="radio"]').checked = true;
         this.shadowRoot
-            .querySelector(".tabs")
-            .style.setProperty("--tab-indicator-offset", activeTab.offsetLeft -
-            this.shadowRoot.querySelector(".tab:first-of-type")
-                .offsetLeft +
-            "px");
-        requestAnimationFrame(() => { var _a, _b; return (_b = (_a = activeTab
-            .querySelector("textarea + .CodeMirror")) === null || _a === void 0 ? void 0 : _a["CodeMirror"]) === null || _b === void 0 ? void 0 : _b.refresh(); });
+            .querySelector('.tabs')
+            .style.setProperty(
+                '--tab-indicator-offset',
+                activeTab.offsetLeft -
+                    this.shadowRoot.querySelector('.tab:first-of-type')
+                        .offsetLeft +
+                    'px'
+            );
+        requestAnimationFrame(() => {
+            var _a, _b;
+            return (_b =
+                (_a = activeTab.querySelector('textarea + .CodeMirror')) ===
+                    null || _a === void 0
+                    ? void 0
+                    : _a['CodeMirror']) === null || _b === void 0
+                ? void 0
+                : _b.refresh();
+        });
     }
     runPlayground() {
         var _a, _b, _c, _d;
         const section = this.shadowRoot;
-        const result = section.querySelector(".result");
+        const result = section.querySelector('.result');
         // Remove all the script tags that might be there.
-        result.querySelectorAll(".result > script").forEach((x) => {
+        result.querySelectorAll('.result > script').forEach((x) => {
             result.removeChild(x);
         });
         // Remove all the consoles that might be there.
-        result.querySelectorAll(".result > .console").forEach((x) => {
+        result.querySelectorAll('.result > .console').forEach((x) => {
             result.removeChild(x);
         });
         // Setup the HTML in 'output'
-        let htmlContent = "";
-        const htmlEditor = section.querySelector('textarea[data-language="html"] + .CodeMirror');
+        let htmlContent = '';
+        const htmlEditor = section.querySelector(
+            'textarea[data-language="html"] + .CodeMirror'
+        );
         if (htmlEditor) {
-            htmlContent = htmlEditor["CodeMirror"].getValue();
+            htmlContent = htmlEditor['CodeMirror'].getValue();
+        } else {
+            htmlContent =
+                (_b =
+                    (_a = section.querySelector(
+                        'textarea[data-language="html"]'
+                    )) === null || _a === void 0
+                        ? void 0
+                        : _a.value) !== null && _b !== void 0
+                    ? _b
+                    : '';
         }
-        else {
-            htmlContent = (_b = (_a = section.querySelector('textarea[data-language="html"]')) === null || _a === void 0 ? void 0 : _a.value) !== null && _b !== void 0 ? _b : "";
-        }
-        section.querySelector(".output").innerHTML = htmlContent;
+        section.querySelector('.output').innerHTML = htmlContent;
         // If the HTML content contains any <script> tags, extract them
         const scriptTags = htmlContent.match(/<script.*>.*<\/script>/g);
         scriptTags.forEach((x) => {
             const m = x.match(/<script([^>]*?)>(.*)<\/script>/);
-            const regex = new RegExp("[\\s\\r\\t\\n]*([a-z0-9\\-_]+)[\\s\\r\\t\\n]*=[\\s\\r\\t\\n]*(['\"])((?:\\\\\\2|(?!\\2).)*)\\2", "ig");
+            const regex = new RegExp(
+                '[\\s\\r\\t\\n]*([a-z0-9\\-_]+)[\\s\\r\\t\\n]*=[\\s\\r\\t\\n]*([\'"])((?:\\\\\\2|(?!\\2).)*)\\2',
+                'ig'
+            );
             const attributes = {};
             let match;
             while ((match = regex.exec(m[1]))) {
                 attributes[match[1]] = match[3];
             }
-            const newScript = document.createElement("script");
-            Object.keys(attributes).forEach((x) => (newScript[x] = attributes[x]));
+            const newScript = document.createElement('script');
+            Object.keys(attributes).forEach(
+                (x) => (newScript[x] = attributes[x])
+            );
             try {
-                newScript.appendChild(document.createTextNode(this.processLiveCodeJavascript(m[2])));
+                newScript.appendChild(
+                    document.createTextNode(
+                        this.processLiveCodeJavascript(m[2])
+                    )
+                );
                 result.appendChild(newScript);
-            }
-            catch (err) {
+            } catch (err) {
                 // If there's a syntax error in the script, catch it here
                 this.pseudoConsole().error(err.message);
             }
         });
         // Add a new script tag
-        const jsEditor = section.querySelector('textarea[data-language="javascript"] + .CodeMirror');
-        let jsContent = "";
+        const jsEditor = section.querySelector(
+            'textarea[data-language="javascript"] + .CodeMirror'
+        );
+        let jsContent = '';
         if (jsEditor) {
-            jsContent = jsEditor["CodeMirror"].getValue();
+            jsContent = jsEditor['CodeMirror'].getValue();
+        } else {
+            jsContent =
+                (_d =
+                    (_c = section.querySelector(
+                        'textarea[data-language="javascript"]'
+                    )) === null || _c === void 0
+                        ? void 0
+                        : _c.value) !== null && _d !== void 0
+                    ? _d
+                    : '';
         }
-        else {
-            jsContent = (_d = (_c = section.querySelector('textarea[data-language="javascript"]')) === null || _c === void 0 ? void 0 : _c.value) !== null && _d !== void 0 ? _d : "";
-        }
-        const newScript = document.createElement("script");
-        newScript.type = "module";
+        const newScript = document.createElement('script');
+        newScript.type = 'module';
         try {
-            newScript.appendChild(document.createTextNode(this.processLiveCodeJavascript(jsContent)));
+            newScript.appendChild(
+                document.createTextNode(
+                    this.processLiveCodeJavascript(jsContent)
+                )
+            );
             result.appendChild(newScript);
-        }
-        catch (err) {
+        } catch (err) {
             // If there's a syntax error in the script, catch it here
             this.pseudoConsole().error(err.message);
         }
@@ -782,15 +856,17 @@ class CodeSection extends HTMLElement {
         window.onerror = (msg, url, line, _colno, error) => {
             if (url === window.location.href) {
                 if (line === 0) {
-                    if (typeof (error === null || error === void 0 ? void 0 : error.toString) === "function") {
+                    if (
+                        typeof (error === null || error === void 0
+                            ? void 0
+                            : error.toString) === 'function'
+                    ) {
                         this.pseudoConsole().error(msg + error.toString());
-                    }
-                    else {
+                    } else {
                         this.pseudoConsole().error(msg);
                     }
-                }
-                else {
-                    this.pseudoConsole().error("Line " + line + ": " + msg);
+                } else {
+                    this.pseudoConsole().error('Line ' + line + ': ' + msg);
                 }
             }
         };
@@ -799,85 +875,117 @@ class CodeSection extends HTMLElement {
         }, 500);
     }
     editorContentChanged() {
-        this.shadowRoot.querySelector("#reset-button").disabled = false;
+        this.shadowRoot.querySelector('#reset-button').disabled = false;
     }
     resetPlayground() {
-        const slots = this.shadowRoot.querySelectorAll(".original-content slot");
+        const slots = this.shadowRoot.querySelectorAll(
+            '.original-content slot'
+        );
         slots.forEach((slot) => {
             const text = slot
                 .assignedNodes()
                 .map((node) => node.innerText)
-                .join("");
+                .join('');
             if (text) {
-                const editor = this.shadowRoot.querySelector('textarea[data-language="' + slot.name + '"] + .CodeMirror');
-                editor["CodeMirror"].setValue(text);
+                const editor = this.shadowRoot.querySelector(
+                    'textarea[data-language="' + slot.name + '"] + .CodeMirror'
+                );
+                editor['CodeMirror'].setValue(text);
             }
         });
     }
     pseudoConsole() {
         const shadowRoot = this.shadowRoot;
         // root ?? (document.currentScript.getRootNode() as HTMLElement);
-        let console = shadowRoot.querySelector(".result .console");
+        let console = shadowRoot.querySelector('.result .console');
         if (!console) {
-            console = document.createElement("pre");
-            console.classList.add("console");
-            shadowRoot.querySelector(".result").appendChild(console);
+            console = document.createElement('pre');
+            console.classList.add('console');
+            shadowRoot.querySelector('.result').appendChild(console);
         }
         const appendConsole = function (msg) {
             // @todo: support string substition (i.e. %s, %c, etc..)
             var _a;
-            let lines = console.innerHTML.split("\n");
+            let lines = console.innerHTML.split('\n');
             if (lines.length > CONSOLE_MAX_LINES) {
                 lines = lines.slice(lines.length - CONSOLE_MAX_LINES + 1);
             }
             console.innerHTML =
-                lines.join("\n") +
-                    "&nbsp;&nbsp;".repeat((_a = parseInt(console.dataset["group-level"])) !== null && _a !== void 0 ? _a : 0) +
-                    msg +
-                    "\n";
+                lines.join('\n') +
+                '&nbsp;&nbsp;'.repeat(
+                    (_a = parseInt(console.dataset['group-level'])) !== null &&
+                        _a !== void 0
+                        ? _a
+                        : 0
+                ) +
+                msg +
+                '\n';
             console.scrollTop = console.scrollHeight;
         };
         return {
             ...window.console,
             assert: function (condition, ...args) {
-                if (!condition)
-                    appendConsole(interpolate(args));
+                if (!condition) appendConsole(interpolate(args));
             },
             // non-standard
             catch: function (err) {
-                const m = err.stack
-                    .split("at ")
-                    .pop()
-                    .match(/:([0-9]+):([0-9]+)$/) || [];
-                appendConsole('<span class="error">' +
-                    (m[1] ? "Line " + m[1] + ": " : "") +
-                    err.message +
-                    "</span>");
+                const m =
+                    err.stack
+                        .split('at ')
+                        .pop()
+                        .match(/:([0-9]+):([0-9]+)$/) || [];
+                appendConsole(
+                    '<span class="error">' +
+                        (m[1] ? 'Line ' + m[1] + ': ' : '') +
+                        err.message +
+                        '</span>'
+                );
             },
             clear: function () {
-                console.innerHTML = "";
+                console.innerHTML = '';
             },
             debug: function (...args) {
                 appendConsole(interpolate(args));
             },
             error: function (...args) {
-                appendConsole('<span class="error">' + interpolate(args) + "</span>");
+                appendConsole(
+                    '<span class="error">' + interpolate(args) + '</span>'
+                );
             },
             group: function (...args) {
                 var _a;
                 if (arguments.length > 0)
-                    appendConsole('<span class="group">' + interpolate(args) + "</span>");
-                console.dataset["group-level"] = Number(((_a = parseInt(console.dataset["group-level"])) !== null && _a !== void 0 ? _a : 0) + 1).toString();
+                    appendConsole(
+                        '<span class="group">' + interpolate(args) + '</span>'
+                    );
+                console.dataset['group-level'] = Number(
+                    ((_a = parseInt(console.dataset['group-level'])) !== null &&
+                    _a !== void 0
+                        ? _a
+                        : 0) + 1
+                ).toString();
             },
             groupCollapsed: function (...args) {
                 var _a;
                 if (arguments.length > 0)
-                    appendConsole('<span class="group">' + interpolate(args) + "</span>");
-                console.dataset["group-level"] = Number(((_a = parseInt(console.dataset["group-level"])) !== null && _a !== void 0 ? _a : 0) + 1).toString();
+                    appendConsole(
+                        '<span class="group">' + interpolate(args) + '</span>'
+                    );
+                console.dataset['group-level'] = Number(
+                    ((_a = parseInt(console.dataset['group-level'])) !== null &&
+                    _a !== void 0
+                        ? _a
+                        : 0) + 1
+                ).toString();
             },
             groupEnd: function () {
                 var _a;
-                console.dataset["group-level"] = Number(((_a = parseInt(console.dataset["group-level"])) !== null && _a !== void 0 ? _a : 0) - 1).toString();
+                console.dataset['group-level'] = Number(
+                    ((_a = parseInt(console.dataset['group-level'])) !== null &&
+                    _a !== void 0
+                        ? _a
+                        : 0) - 1
+                ).toString();
             },
             info: function (...args) {
                 appendConsole(interpolate(args));
@@ -886,7 +994,9 @@ class CodeSection extends HTMLElement {
                 appendConsole(interpolate(args));
             },
             warn: function (...args) {
-                appendConsole('<span class="warning">' + interpolate(args) + "</span>");
+                appendConsole(
+                    '<span class="warning">' + interpolate(args) + '</span>'
+                );
             },
         };
     }
@@ -898,73 +1008,93 @@ class CodeSection extends HTMLElement {
      * - wrap in a try/catch block
      */
     processLiveCodeJavascript(script) {
-        if (!script)
-            return "";
+        if (!script) return '';
         const jsID = randomJavaScriptId();
         // Replace document.querySelector.* et al with section.querySelector.*
-        script = script.replace(/([^a-zA-Z0-9_-]?)document.querySelector\s*\(/g, "$1container" + jsID + ".querySelector(");
-        script = script.replace(/([^a-zA-Z0-9_-]?)document.querySelectorAll\s*\(/g, "$1container" + jsID + ".querySelectorAll(");
-        script = script.replace(/([^a-zA-Z0-9_-]?)document.getElementById\s*\(/g, "$1container" + jsID + ".querySelector('#' + ");
+        script = script.replace(
+            /([^a-zA-Z0-9_-]?)document.querySelector\s*\(/g,
+            '$1container' + jsID + '.querySelector('
+        );
+        script = script.replace(
+            /([^a-zA-Z0-9_-]?)document.querySelectorAll\s*\(/g,
+            '$1container' + jsID + '.querySelectorAll('
+        );
+        script = script.replace(
+            /([^a-zA-Z0-9_-]?)document.getElementById\s*\(/g,
+            '$1container' + jsID + ".querySelector('#' + "
+        );
         // Replace console.* with pseudoConsole.*
-        script = script.replace(/([^a-zA-Z0-9_-])?console\./g, "$1shadowRoot" + jsID + ".host.pseudoConsole().");
+        script = script.replace(
+            /([^a-zA-Z0-9_-])?console\./g,
+            '$1shadowRoot' + jsID + '.host.pseudoConsole().'
+        );
         // Extract import (can't be inside a try...catch block)
         const imports = [];
-        script = script.replace(/([^a-zA-Z0-9_-]?import.*)('.*'|".*");/g, (match, p1, p2) => {
-            imports.push([match, p1, p2.slice(1, p2.length - 1)]);
-            return "";
-        });
-        return (imports
-            .map((x) => {
-            if (this.moduleMap[x[2]]) {
-                return x[1] + '"' + this.moduleMap[x[2]] + '";';
+        script = script.replace(
+            /([^a-zA-Z0-9_-]?import.*)('.*'|".*");/g,
+            (match, p1, p2) => {
+                imports.push([match, p1, p2.slice(1, p2.length - 1)]);
+                return '';
             }
-            return x[0];
-        })
-            .join("\n") +
+        );
+        return (
+            imports
+                .map((x) => {
+                    if (this.moduleMap[x[2]]) {
+                        return x[1] + '"' + this.moduleMap[x[2]] + '";';
+                    }
+                    return x[0];
+                })
+                .join('\n') +
             `const shadowRoot${jsID} = document.querySelector("#${this.id}").shadowRoot;` +
             `const container${jsID} = shadowRoot${jsID}.getElementById("${this.containerId}");` +
-            `try{${script}} catch(err) { shadowRoot${jsID}.host.pseudoConsole().catch(err) }`);
+            `try{${script}} catch(err) { shadowRoot${jsID}.host.pseudoConsole().catch(err) }`
+        );
     }
     //
     // Property/attributes
     //
     // 'activetab' is the name of the currently visible tab
     get activeTab() {
-        return this.hasAttribute("activetab") ? this.getAttribute("activetab") : "";
+        return this.hasAttribute('activetab')
+            ? this.getAttribute('activetab')
+            : '';
     }
     set activeTab(val) {
         if (val) {
-            this.setAttribute("activetab", val);
-        }
-        else {
-            this.removeAttribute("activetab");
+            this.setAttribute('activetab', val);
+        } else {
+            this.removeAttribute('activetab');
         }
     }
     // 'showlinenumbers' is true if line numbers should be displayed
     get showLineNumbers() {
-        return this.hasAttribute("showlinenumbers")
-            ? this.getAttribute("showlinenumbers") === "true"
+        return this.hasAttribute('showlinenumbers')
+            ? this.getAttribute('showlinenumbers') === 'true'
             : true;
     }
     set showLineNumbers(val) {
         if (val) {
-            this.setAttribute("showlinenumbers", val ? "true" : "false");
-        }
-        else {
-            this.removeAttribute("showlinenumbers");
+            this.setAttribute('showlinenumbers', val ? 'true' : 'false');
+        } else {
+            this.removeAttribute('showlinenumbers');
         }
     }
 }
 function randomId() {
-    return ("i" +
+    return (
+        'i' +
         (Date.now().toString(36).slice(-2) +
-            Math.floor(Math.random() * 0x186a0).toString(36)));
+            Math.floor(Math.random() * 0x186a0).toString(36))
+    );
 }
 function randomJavaScriptId() {
-    return (Date.now().toString(26).slice(-2) +
-        Math.floor(Math.random() * 0x186a0).toString(26));
+    return (
+        Date.now().toString(26).slice(-2) +
+        Math.floor(Math.random() * 0x186a0).toString(26)
+    );
 }
-const INDENT = "  ";
+const INDENT = '  ';
 /**
  * Convert a basic type or an object into a HTML string
  */
@@ -974,7 +1104,7 @@ function asString(depth, value, options = {}) {
     //
     // BOOLEAN
     //
-    if (typeof value === "boolean") {
+    if (typeof value === 'boolean') {
         return {
             text: `<span class="boolean">${escapeHTML(String(value))}</span>`,
             itemCount: 1,
@@ -984,7 +1114,7 @@ function asString(depth, value, options = {}) {
     //
     // NUMBER
     //
-    if (typeof value === "number") {
+    if (typeof value === 'number') {
         return {
             text: `<span class="number">${escapeHTML(String(value))}</span>`,
             itemCount: 1,
@@ -994,7 +1124,7 @@ function asString(depth, value, options = {}) {
     //
     // STRING
     //
-    if (typeof value === "string") {
+    if (typeof value === 'string') {
         if (options.quote.length === 0) {
             return {
                 text: escapeHTML(value),
@@ -1003,7 +1133,9 @@ function asString(depth, value, options = {}) {
             };
         }
         return {
-            text: `<span class="string">${escapeHTML(options.quote + value + options.quote)}</span>`,
+            text: `<span class="string">${escapeHTML(
+                options.quote + value + options.quote
+            )}</span>`,
             itemCount: 1,
             lineCount: value.split(/\r\n|\r|\n/).length,
         };
@@ -1011,12 +1143,11 @@ function asString(depth, value, options = {}) {
     //
     // FUNCTION
     //
-    if (typeof value === "function") {
-        let functionValue = "";
-        if (value.hasOwnProperty("toString")) {
+    if (typeof value === 'function') {
+        let functionValue = '';
+        if (value.hasOwnProperty('toString')) {
             functionValue = escapeHTML(value.toString());
-        }
-        else {
+        } else {
             functionValue = escapeHTML(String(value));
         }
         return {
@@ -1052,8 +1183,7 @@ function asString(depth, value, options = {}) {
         for (let i = 0; i < value.length; i++) {
             if (Object.keys(value).includes(Number(i).toString())) {
                 result.push(asString(depth + 1, value[i]));
-            }
-            else {
+            } else {
                 result.push({
                     text: '<span class="empty">empty</span>',
                     itemCount: 1,
@@ -1062,23 +1192,35 @@ function asString(depth, value, options = {}) {
             }
         }
         const itemCount = result.reduce((acc, val) => acc + val.itemCount, 0);
-        const lineCount = result.reduce((acc, val) => Math.max(acc, val.lineCount), 0);
+        const lineCount = result.reduce(
+            (acc, val) => Math.max(acc, val.lineCount),
+            0
+        );
         if (itemCount > 5 || lineCount > 1) {
             return {
-                text: "<span class='sep'>[</span>\n" +
+                text:
+                    "<span class='sep'>[</span>\n" +
                     INDENT.repeat(depth + 1) +
                     result
-                        .map((x, i) => '<span class="index">' + i + "</span>" + x.text)
-                        .join("<span class='sep'>, </span>\n" + INDENT.repeat(depth + 1)) +
-                    "\n" +
+                        .map(
+                            (x, i) =>
+                                '<span class="index">' + i + '</span>' + x.text
+                        )
+                        .join(
+                            "<span class='sep'>, </span>\n" +
+                                INDENT.repeat(depth + 1)
+                        ) +
+                    '\n' +
                     INDENT.repeat(depth) +
                     "<span class='sep'>]</span>",
                 itemCount,
-                lineCount: 2 + result.reduce((acc, val) => acc + val.lineCount, 0),
+                lineCount:
+                    2 + result.reduce((acc, val) => acc + val.lineCount, 0),
             };
         }
         return {
-            text: "<span class='sep'>[</span>" +
+            text:
+                "<span class='sep'>[</span>" +
                 result.map((x) => x.text).join("<span class='sep'>, </span>") +
                 "<span class='sep'>]</span>",
             itemCount: Math.max(1, itemCount),
@@ -1088,16 +1230,16 @@ function asString(depth, value, options = {}) {
     //
     // OBJECT
     //
-    if (typeof value === "object") {
+    if (typeof value === 'object') {
         const props = Object.keys(value);
         Object.getOwnPropertyNames(value).forEach((prop) => {
             if (!props.includes(prop)) {
                 props.push(prop);
             }
         });
-        if (props.length === 0 && typeof props.toString === "function") {
+        if (props.length === 0 && typeof props.toString === 'function') {
             const result = value.toString();
-            if (result === "[object Object]")
+            if (result === '[object Object]')
                 return {
                     text: '<span class="sep">{}</span>',
                     itemCount: 1,
@@ -1110,7 +1252,7 @@ function asString(depth, value, options = {}) {
             };
         }
         const propStrings = props.sort().map((key) => {
-            if (typeof value[key] === "object" && value[key] !== null) {
+            if (typeof value[key] === 'object' && value[key] !== null) {
                 let result = asString(depth + 1, value[key]);
                 if (result.itemCount > 500) {
                     result = {
@@ -1125,7 +1267,7 @@ function asString(depth, value, options = {}) {
                     lineCount: result.lineCount,
                 };
             }
-            if (typeof value[key] === "function") {
+            if (typeof value[key] === 'function') {
                 return {
                     text: `<span class="property">${key}</span></span><span class='sep'>: </span><span class='function'>ƒ (...)</span>`,
                     itemCount: 1,
@@ -1139,11 +1281,18 @@ function asString(depth, value, options = {}) {
                 lineCount: result.lineCount,
             };
         });
-        const itemCount = propStrings.reduce((acc, val) => acc + val.itemCount, 0);
-        const lineCount = propStrings.reduce((acc, val) => acc + val.lineCount, 0);
+        const itemCount = propStrings.reduce(
+            (acc, val) => acc + val.itemCount,
+            0
+        );
+        const lineCount = propStrings.reduce(
+            (acc, val) => acc + val.lineCount,
+            0
+        );
         if (itemCount < 5) {
             return {
-                text: "<span class='sep'>{</span>" +
+                text:
+                    "<span class='sep'>{</span>" +
                     propStrings
                         .map((x) => x.text)
                         .join("</span><span class='sep'>, </span>") +
@@ -1153,12 +1302,16 @@ function asString(depth, value, options = {}) {
             };
         }
         return {
-            text: "<span class='sep'>{</span>\n" +
+            text:
+                "<span class='sep'>{</span>\n" +
                 INDENT.repeat(depth + 1) +
                 propStrings
                     .map((x) => x.text)
-                    .join("</span><span class='sep'>,</span>\n" + INDENT.repeat(depth + 1)) +
-                "\n" +
+                    .join(
+                        "</span><span class='sep'>,</span>\n" +
+                            INDENT.repeat(depth + 1)
+                    ) +
+                '\n' +
                 INDENT.repeat(depth) +
                 "<span class='sep'>}</span>",
             itemCount: itemCount,
@@ -1170,55 +1323,60 @@ function asString(depth, value, options = {}) {
 function interpolate(args) {
     const format = args[0];
     const rest = args.slice(1);
-    if (typeof format === "string" && format.includes("%") && rest.length) {
-        const string = format.replace(/(%[oscdif]|%(\d*)\.(\d*)[dif])/g, (all, key, width = "", dp) => {
-            if (key === "%o") {
-                // object
-                return asString(0, rest.shift()).text;
-            }
-            if (key === "%s") {
-                // string
-                return rest.shift();
-            }
-            if (key === "%c") {
-                return `</span><span style="${rest.shift()}">`;
-            }
-            const value = rest.shift();
-            let res = null;
-            if (key.substr(-1) === "f" && typeof value === "number") {
-                if (isNaN(parseInt(dp, 10))) {
-                    res = value;
+    if (typeof format === 'string' && format.includes('%') && rest.length) {
+        const string = format.replace(
+            /(%[oscdif]|%(\d*)\.(\d*)[dif])/g,
+            (all, key, width = '', dp) => {
+                if (key === '%o') {
+                    // object
+                    return asString(0, rest.shift()).text;
                 }
-                else {
-                    res = value.toFixed(dp);
+                if (key === '%s') {
+                    // string
+                    return rest.shift();
                 }
+                if (key === '%c') {
+                    return `</span><span style="${rest.shift()}">`;
+                }
+                const value = rest.shift();
+                let res = null;
+                if (key.substr(-1) === 'f' && typeof value === 'number') {
+                    if (isNaN(parseInt(dp, 10))) {
+                        res = value;
+                    } else {
+                        res = value.toFixed(dp);
+                    }
+                } else if (typeof value === 'string') {
+                    res = parseInt(value, 10);
+                }
+                if (width === '') {
+                    return res;
+                }
+                return asString(0, res).text.padStart(width, ' ');
             }
-            else if (typeof value === "string") {
-                res = parseInt(value, 10);
-            }
-            if (width === "") {
-                return res;
-            }
-            return asString(0, res).text.padStart(width, " ");
-        });
+        );
         return string;
     }
     if (rest.length) {
-        return (asString(0, format, { quote: "" }).text +
-            rest.map((x) => asString(0, x, { quote: "" })).join(""));
+        return (
+            asString(0, format, { quote: '' }).text +
+            rest.map((x) => asString(0, x, { quote: '' })).join('')
+        );
     }
-    return asString(0, format, { quote: "" }).text;
+    return asString(0, format, { quote: '' }).text;
 }
 function escapeHTML(s) {
     return s
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
 }
 // Register the tag for the element, only if it isn't already registered
-(_a = customElements.get("code-playground")) !== null && _a !== void 0 ? _a : customElements.define("code-playground", CodeSection);
+(_a = customElements.get('code-playground')) !== null && _a !== void 0
+    ? _a
+    : customElements.define('code-playground', CodeSection);
 
 export { CodeSection };
 //# sourceMappingURL=code-playground.js.map
