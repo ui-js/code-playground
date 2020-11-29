@@ -25,7 +25,7 @@ const PKG_VERSION = pkg.version || "v?.?.?";
 
 const TERSER_OPTIONS = {
   format: {
-    comments: !PRODUCTION,
+    comments: false,
     preamble: "/*  v" + PKG_VERSION + "  */",
   },
   compress: {
@@ -46,17 +46,25 @@ const ROLLUP = [
   {
     input: "./src/code-playground.ts",
     output: {
-      file: `${BUILD_DIRECTORY}/code-playground.js`,
+      file: `${BUILD_DIRECTORY}/code-playground.min.js`,
       format: "es",
-      sourcemap: !PRODUCTION,
+      sourcemap: false,
     },
     // external: ['tslib'],
     plugins: [
-      PRODUCTION && eslint(),
       resolve(),
       typescript(TYPESCRIPT_OPTIONS),
-      PRODUCTION && terser(TERSER_OPTIONS),
+      terser(TERSER_OPTIONS),
     ],
+  },
+  {
+    input: "./src/code-playground.ts",
+    output: {
+      file: `${BUILD_DIRECTORY}/code-playground.js`,
+      format: "es",
+      sourcemap: true,
+    },
+    plugins: [eslint(), resolve(), typescript(TYPESCRIPT_OPTIONS)],
   },
 ];
 
