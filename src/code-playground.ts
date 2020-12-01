@@ -853,8 +853,12 @@ export class CodePlaygroundElement extends HTMLElement {
                     'textarea[data-language="html"]'
                 )?.value ?? '';
         }
-        section.querySelector('.output').innerHTML = htmlContent;
-
+        try {
+            section.querySelector('.output').innerHTML = htmlContent;
+        } catch (e) {
+            // If there's a syntax error in the markup, catch it here
+            this.pseudoConsole().error(e.message);
+        }
         // If the HTML content contains any <script> tags, extract them
         const scriptTags = htmlContent.match(/<script.*>.*<\/script>/g);
         scriptTags?.forEach((x) => {
@@ -1099,7 +1103,7 @@ export class CodePlaygroundElement extends HTMLElement {
                 })
                 .join('\n') +
             `const shadowRoot${jsID} = document.querySelector("#${this.id}").shadowRoot;` +
-            `const container${jsID} = shadowRoot${jsID}.getElementById("${this.containerId}");` +
+            `const container${jsID} = shadowRoot${jsID}.querySelector("#${this.containerId} div.output");` +
             'try{\n' +
             script +
             `\n} catch(err) { shadowRoot${jsID}.host.pseudoConsole().catch(err) }`
@@ -1304,7 +1308,6 @@ function asString(
     if (value instanceof Element) {
         let result = `<${value.localName}`;
         let lineCount = 1;
-        if (value.className) result += ` class="${value.className}"`;
         Array.from(value.attributes).forEach((x) => {
             result +=
                 ' ' +
