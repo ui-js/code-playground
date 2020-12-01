@@ -477,7 +477,7 @@ TEMPLATE.innerHTML = `
         opacity: 0.5;
     }
     
-    // Roughe typographic adjustments.
+    // Rouge typographic adjustments.
     // See https://github.com/rouge-ruby/rouge/wiki/List-of-tokens
     
     .highlight .c1,     // Single line comment
@@ -529,7 +529,9 @@ TEMPLATE.innerHTML = `
     
     .cm-s-tomorrow-night .CodeMirror-activeline-background { background: ${base02}; }
     .cm-s-tomorrow-night .CodeMirror-matchingbracket { text-decoration: underline; color: white !important; }    
+
   </style>
+  <slot name="style"></slot>
 `;
 const CONSOLE_MAX_LINES = 1000;
 // interface Window {
@@ -549,7 +551,7 @@ class CodePlaygroundElement extends HTMLElement {
         const container = document.createElement('div');
         this.containerId = randomId();
         container.id = this.containerId;
-        container.innerHTML = `
+        const containerContent = `
       <div class='original-content'><slot name="html"></slot><slot name="css"></slot><slot name="javascript"></slot></div>
       <div class='source'><div class='tabs'></div>
       <div class='buttons'>
@@ -559,6 +561,7 @@ class CodePlaygroundElement extends HTMLElement {
       <div class='result'>
           <div class='output'></div>
       </div></div>`;
+        container.innerHTML = containerContent;
         this.shadowRoot.appendChild(container);
         // Add event handler for "run" and "reset" button
         this.shadowRoot
@@ -605,6 +608,18 @@ class CodePlaygroundElement extends HTMLElement {
             this.shadowRoot
                 .querySelectorAll('textarea + .CodeMirror')
                 .forEach((x) => { var _a; return (_a = x === null || x === void 0 ? void 0 : x['CodeMirror']) === null || _a === void 0 ? void 0 : _a.setLineNumbers(this.showLineNumbers); });
+        }
+    }
+    connectedCallback() {
+        const styleSlot = this.shadowRoot.querySelector('slot[name=style]');
+        if (styleSlot) {
+            const styleContent = styleSlot
+                .assignedNodes()
+                .map((node) => node.innerHTML)
+                .join('');
+            const style = document.createElement('style');
+            style.textContent = styleContent;
+            this.shadowRoot.appendChild(style);
         }
     }
     // The content of the code section has changed. Rebuild the tabs

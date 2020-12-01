@@ -479,7 +479,7 @@ TEMPLATE.innerHTML = `
         opacity: 0.5;
     }
     
-    // Roughe typographic adjustments.
+    // Rouge typographic adjustments.
     // See https://github.com/rouge-ruby/rouge/wiki/List-of-tokens
     
     .highlight .c1,     // Single line comment
@@ -531,7 +531,9 @@ TEMPLATE.innerHTML = `
     
     .cm-s-tomorrow-night .CodeMirror-activeline-background { background: ${base02}; }
     .cm-s-tomorrow-night .CodeMirror-matchingbracket { text-decoration: underline; color: white !important; }    
+
   </style>
+  <slot name="style"></slot>
 `;
 
 const CONSOLE_MAX_LINES = 1000;
@@ -617,7 +619,7 @@ export class CodePlaygroundElement extends HTMLElement {
         const container = document.createElement('div');
         this.containerId = randomId();
         container.id = this.containerId;
-        container.innerHTML = `
+        const containerContent = `
       <div class='original-content'><slot name="html"></slot><slot name="css"></slot><slot name="javascript"></slot></div>
       <div class='source'><div class='tabs'></div>
       <div class='buttons'>
@@ -627,6 +629,8 @@ export class CodePlaygroundElement extends HTMLElement {
       <div class='result'>
           <div class='output'></div>
       </div></div>`;
+
+        container.innerHTML = containerContent;
         this.shadowRoot.appendChild(container);
 
         // Add event handler for "run" and "reset" button
@@ -656,6 +660,21 @@ export class CodePlaygroundElement extends HTMLElement {
                     .forEach((x) => x?.['CodeMirror']?.refresh());
             });
         });
+    }
+
+    connectedCallback(): void {
+        const styleSlot = this.shadowRoot.querySelector<HTMLSlotElement>(
+            'slot[name=style]'
+        );
+        if (styleSlot) {
+            const styleContent = styleSlot
+                .assignedNodes()
+                .map((node: HTMLElement) => node.innerHTML)
+                .join('');
+            const style = document.createElement('style');
+            style.textContent = styleContent;
+            this.shadowRoot.appendChild(style);
+        }
     }
 
     // The content of the code section has changed. Rebuild the tabs

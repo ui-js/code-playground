@@ -11,6 +11,12 @@
 
 <body>
     <code-playground layout="stack" showlinenumbers="true">
+        <style slot="style">
+.zebra-zone {
+    font-size: 48px;
+    background: grey;
+}
+        </style>
         <script>
             moduleMap = {
                 mathlive: "//unpkg.com/mathlive/dist/mathlive.mjs",
@@ -30,7 +36,7 @@ console.log(mf.config);
 &lt;script&gt;console.log("Hello world");&lt;/script&gt;
 &lt;math-field id="mathfield"&gt;
     x=\frac{-b\pm \sqrt{b^2-4ac}}{2a}
-&lt;/math-field&gt;</div>
+&lt;/math-field&gt;&lt;div class="zebra-zone"&gt;Hello There &lt;/div&gt;</div>
 
     </code-playground>
 
