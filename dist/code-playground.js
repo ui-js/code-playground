@@ -535,7 +535,7 @@ const CONSOLE_MAX_LINES = 1000;
 // interface Window {
 //   ResizeObserver: typeof ResizeObserver;
 // }
-class CodeSection extends HTMLElement {
+class CodePlaygroundElement extends HTMLElement {
     constructor() {
         var _a;
         super();
@@ -629,11 +629,16 @@ class CodeSection extends HTMLElement {
         const slots = shadowRoot.querySelectorAll('.original-content slot');
         let content = '';
         slots.forEach((slot) => {
-            const text = slot
+            let text = slot
                 .assignedNodes()
                 .map((node) => node.innerHTML)
                 .join('');
             if (text) {
+                // Remove empty comments. This 'trick' is used to work around
+                // an issue where Eleventy ignores empty lines in HTML blocks,
+                // so an empty comment is insert, but it now needs to be removed
+                // so that the empty line is properly picked up by CodeMirror. Sigh.
+                text = text.replace(/<!-- -->/g, '');
                 const tabId = randomId();
                 const language = slot.name;
                 content += `<div class='tab' id="${tabId}" data-name="${language}">
@@ -748,7 +753,7 @@ class CodeSection extends HTMLElement {
             const newScript = document.createElement('script');
             Object.keys(attributes).forEach((x) => (newScript[x] = attributes[x]));
             try {
-                newScript.appendChild(document.createTextNode(this.processLiveCodeJavascript(m[2])));
+                newScript.innerText = this.processLiveCodeJavascript(m[2]);
                 result.appendChild(newScript);
             }
             catch (err) {
@@ -768,7 +773,7 @@ class CodeSection extends HTMLElement {
         const newScript = document.createElement('script');
         newScript.type = 'module';
         try {
-            newScript.appendChild(document.createTextNode(this.processLiveCodeJavascript(jsContent)));
+            newScript.innerText = this.processLiveCodeJavascript(jsContent);
             result.appendChild(newScript);
         }
         catch (err) {
@@ -1221,7 +1226,7 @@ function escapeHTML(s) {
         .replace(/'/g, '&#039;');
 }
 // Register the tag for the element, only if it isn't already registered
-(_a = customElements.get('code-playground')) !== null && _a !== void 0 ? _a : customElements.define('code-playground', CodeSection);
+(_a = customElements.get('code-playground')) !== null && _a !== void 0 ? _a : customElements.define('code-playground', CodePlaygroundElement);
 
-export { CodeSection };
+export { CodePlaygroundElement };
 //# sourceMappingURL=code-playground.js.map

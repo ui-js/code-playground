@@ -574,7 +574,7 @@ interface ResizeObserverSize {
 //   ResizeObserver: typeof ResizeObserver;
 // }
 
-export class CodeSection extends HTMLElement {
+export class CodePlaygroundElement extends HTMLElement {
     dirty = false;
     containerId: string;
     moduleMap: { [module: string]: string };
@@ -683,11 +683,16 @@ export class CodeSection extends HTMLElement {
         const slots = shadowRoot.querySelectorAll('.original-content slot');
         let content = '';
         slots.forEach((slot: HTMLSlotElement) => {
-            const text = slot
+            let text = slot
                 .assignedNodes()
                 .map((node: HTMLElement) => node.innerHTML)
                 .join('');
             if (text) {
+                // Remove empty comments. This 'trick' is used to work around
+                // an issue where Eleventy ignores empty lines in HTML blocks,
+                // so an empty comment is insert, but it now needs to be removed
+                // so that the empty line is properly picked up by CodeMirror. Sigh.
+                text = text.replace(/<!-- -->/g, '');
                 const tabId = randomId();
                 const language = slot.name;
                 content += `<div class='tab' id="${tabId}" data-name="${language}">
@@ -846,11 +851,7 @@ export class CodeSection extends HTMLElement {
                 (x) => (newScript[x] = attributes[x])
             );
             try {
-                newScript.appendChild(
-                    document.createTextNode(
-                        this.processLiveCodeJavascript(m[2])
-                    )
-                );
+                newScript.innerText = this.processLiveCodeJavascript(m[2]);
                 result.appendChild(newScript);
             } catch (err) {
                 // If there's a syntax error in the script, catch it here
@@ -874,11 +875,7 @@ export class CodeSection extends HTMLElement {
         const newScript = document.createElement('script');
         newScript.type = 'module';
         try {
-            newScript.appendChild(
-                document.createTextNode(
-                    this.processLiveCodeJavascript(jsContent)
-                )
-            );
+            newScript.innerText = this.processLiveCodeJavascript(jsContent);
             result.appendChild(newScript);
         } catch (err) {
             // If there's a syntax error in the script, catch it here
@@ -1434,4 +1431,4 @@ function escapeHTML(s: string): string {
 
 // Register the tag for the element, only if it isn't already registered
 customElements.get('code-playground') ??
-    customElements.define('code-playground', CodeSection);
+    customElements.define('code-playground', CodePlaygroundElement);
