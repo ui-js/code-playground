@@ -158,7 +158,10 @@ TEMPLATE.innerHTML = `
     .console .property {
       color: ${base0b}
     }
-    .console .error {
+    .console .object {
+        color: ${base0b}
+      }
+      .console .error {
       display: block;
       width: calc(100% - 10px);
       padding-right: 4px;
@@ -1055,22 +1058,22 @@ export class CodePlaygroundElement extends HTMLElement {
         const jsID = randomJavaScriptId();
         // Replace document.querySelector.* et al with section.querySelector.*
         script = script.replace(
-            /([^a-zA-Z0-9_-]?)document.querySelector\s*\(/g,
+            /([^a-zA-Z0-9_-]?)document\s*\.\s*querySelector\s*\(/g,
             '$1container' + jsID + '.querySelector('
         );
         script = script.replace(
-            /([^a-zA-Z0-9_-]?)document.querySelectorAll\s*\(/g,
+            /([^a-zA-Z0-9_-]?)document\s*\.\s*querySelectorAll\s*\(/g,
             '$1container' + jsID + '.querySelectorAll('
         );
 
         script = script.replace(
-            /([^a-zA-Z0-9_-]?)document.getElementById\s*\(/g,
+            /([^a-zA-Z0-9_-]?)document\s*\.\s*getElementById\s*\(/g,
             '$1container' + jsID + ".querySelector('#' + "
         );
 
         // Replace console.* with pseudoConsole.*
         script = script.replace(
-            /([^a-zA-Z0-9_-])?console\./g,
+            /([^a-zA-Z0-9_-])?console\s*\.\s*/g,
             '$1shadowRoot' + jsID + '.host.pseudoConsole().'
         );
 
@@ -1296,6 +1299,40 @@ function asString(
     }
 
     //
+    // HTMLElement
+    //
+    if (value instanceof Element) {
+        let result = `<${value.localName}`;
+        let lineCount = 1;
+        if (value.className) result += ` class="${value.className}"`;
+        Array.from(value.attributes).forEach((x) => {
+            result +=
+                ' ' +
+                x.localName +
+                '="' +
+                value.getAttribute(x.localName) +
+                '"';
+        });
+        result += '>';
+
+        if (value.innerHTML) {
+            let content = value.innerHTML.split('\n');
+            if (content.length > 4) {
+                content = [...content.slice(0, 5), '(...)\n'];
+            }
+            result += content.join('\n');
+            lineCount += content.length;
+        }
+
+        result += `</${value.localName}>`;
+        return {
+            text: `<span class="object">${escapeHTML(result)}</span>`,
+            itemCount: 1,
+            lineCount: lineCount,
+        };
+    }
+
+    //
     // OBJECT
     //
     if (typeof value === 'object') {
@@ -1437,7 +1474,7 @@ function interpolate(args: unknown[]): string {
         return string;
     }
 
-    return args.map((x) => asString(0, x, { quote: '' }).text).join('');
+    return args.map((x) => asString(0, x, { quote: '' }).text).join(' ');
 }
 
 function escapeHTML(s: string): string {
