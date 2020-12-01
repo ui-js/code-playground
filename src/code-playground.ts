@@ -1418,7 +1418,7 @@ function interpolate(args: unknown[]): string {
     if (rest.length) {
         return (
             asString(0, format, { quote: '' }).text +
-            rest.map((x) => asString(0, x, { quote: '' })).join('')
+            rest.map((x) => asString(0, x, { quote: '' }).text).join('')
         );
     }
     return asString(0, format, { quote: '' }).text;
