@@ -851,7 +851,7 @@ export class CodePlaygroundElement extends HTMLElement {
                 (x) => (newScript[x] = attributes[x])
             );
             try {
-                newScript.innerText = this.processLiveCodeJavascript(m[2]);
+                newScript.textContent = this.processLiveCodeJavascript(m[2]);
                 result.appendChild(newScript);
             } catch (err) {
                 // If there's a syntax error in the script, catch it here
@@ -875,7 +875,7 @@ export class CodePlaygroundElement extends HTMLElement {
         const newScript = document.createElement('script');
         newScript.type = 'module';
         try {
-            newScript.innerText = this.processLiveCodeJavascript(jsContent);
+            newScript.textContent = this.processLiveCodeJavascript(jsContent);
             result.appendChild(newScript);
         } catch (err) {
             // If there's a syntax error in the script, catch it here
@@ -1062,6 +1062,8 @@ export class CodePlaygroundElement extends HTMLElement {
             }
         );
 
+        // Important: keep the ${script} on a separate line. The content could
+        // be "// a comment" which would result in the script failign to parse
         return (
             imports
                 .map((x) => {
@@ -1073,7 +1075,9 @@ export class CodePlaygroundElement extends HTMLElement {
                 .join('\n') +
             `const shadowRoot${jsID} = document.querySelector("#${this.id}").shadowRoot;` +
             `const container${jsID} = shadowRoot${jsID}.getElementById("${this.containerId}");` +
-            `try{${script}} catch(err) { shadowRoot${jsID}.host.pseudoConsole().catch(err) }`
+            'try{\n' +
+            script +
+            `\n} catch(err) { shadowRoot${jsID}.host.pseudoConsole().catch(err) }`
         );
     }
 
