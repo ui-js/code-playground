@@ -979,6 +979,9 @@ export class CodePlaygroundElement extends HTMLElement {
             debug: function (...args) {
                 appendConsole(interpolate(args));
             },
+            dir: function (...args) {
+                appendConsole(interpolate(args));
+            },
             error: function (...args) {
                 appendConsole(
                     '<span class="error">' + interpolate(args) + '</span>'
@@ -1415,13 +1418,7 @@ function interpolate(args: unknown[]): string {
         return string;
     }
 
-    if (rest.length) {
-        return (
-            asString(0, format, { quote: '' }).text +
-            rest.map((x) => asString(0, x, { quote: '' }).text).join('')
-        );
-    }
-    return asString(0, format, { quote: '' }).text;
+    return args.map((x) => asString(0, x, { quote: '' }).text).join('');
 }
 
 function escapeHTML(s: string): string {
