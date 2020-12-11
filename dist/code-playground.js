@@ -757,15 +757,8 @@ class CodePlaygroundElement extends HTMLElement {
         else {
             htmlContent = (_b = (_a = section.querySelector('textarea[data-language="html"]')) === null || _a === void 0 ? void 0 : _a.value) !== null && _b !== void 0 ? _b : '';
         }
-        try {
-            section.querySelector('.output').innerHTML = htmlContent;
-        }
-        catch (e) {
-            // If there's a syntax error in the markup, catch it here
-            this.pseudoConsole().error(e.message);
-        }
         // If the HTML content contains any <script> tags, extract them
-        const scriptTags = htmlContent.match(/<script.*>.*<\/script>/g);
+        const scriptTags = htmlContent.match(/<script.*>.*?<\/script>/g);
         scriptTags === null || scriptTags === void 0 ? void 0 : scriptTags.forEach((x) => {
             const m = x.match(/<script([^>]*?)>(.*)<\/script>/);
             const regex = new RegExp('[\\s\\r\\t\\n]*([a-z0-9\\-_]+)[\\s\\r\\t\\n]*=[\\s\\r\\t\\n]*([\'"])((?:\\\\\\2|(?!\\2).)*)\\2', 'ig');
@@ -785,6 +778,13 @@ class CodePlaygroundElement extends HTMLElement {
                 this.pseudoConsole().error(err.message);
             }
         });
+        try {
+            section.querySelector('.output').innerHTML = htmlContent;
+        }
+        catch (e) {
+            // If there's a syntax error in the markup, catch it here
+            this.pseudoConsole().error(e.message);
+        }
         // Add a new script tag
         const jsEditor = section.querySelector('textarea[data-language="javascript"] + .CodeMirror');
         let jsContent = '';

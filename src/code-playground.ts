@@ -853,14 +853,8 @@ export class CodePlaygroundElement extends HTMLElement {
                     'textarea[data-language="html"]'
                 )?.value ?? '';
         }
-        try {
-            section.querySelector('.output').innerHTML = htmlContent;
-        } catch (e) {
-            // If there's a syntax error in the markup, catch it here
-            this.pseudoConsole().error(e.message);
-        }
         // If the HTML content contains any <script> tags, extract them
-        const scriptTags = htmlContent.match(/<script.*>.*<\/script>/g);
+        const scriptTags = htmlContent.match(/<script.*>.*?<\/script>/g);
         scriptTags?.forEach((x) => {
             const m = x.match(/<script([^>]*?)>(.*)<\/script>/);
             const regex = new RegExp(
@@ -884,6 +878,13 @@ export class CodePlaygroundElement extends HTMLElement {
                 this.pseudoConsole().error(err.message);
             }
         });
+
+        try {
+            section.querySelector('.output').innerHTML = htmlContent;
+        } catch (e) {
+            // If there's a syntax error in the markup, catch it here
+            this.pseudoConsole().error(e.message);
+        }
 
         // Add a new script tag
         const jsEditor = section.querySelector(
