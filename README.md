@@ -48,8 +48,9 @@ The Javascript source code is modified before execution:
     name to a URL. For example:
 -   if a `style` slot is provided, its content is injected as a CSS stylesheet
     before the script execution
--   if a `preamble` slot is provided, it is inserted before the script. This
-    can be used to insert linked stylesheets, for example.
+-   if a `preamble` slot is provided, it is inserted before the script.
+-   if a `output-stylesheets` attribute is provided, it is used to inserts
+    links to stylesheets in the output.
 
 ```html
 <code-playground>
