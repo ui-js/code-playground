@@ -46,6 +46,10 @@ The Javascript source code is modified before execution:
 -   the path of `import` directives can be modified as well. Add a `<script>` tag
     inside the component that defines a `moduleMap` variable that maps a module
     name to a URL. For example:
+-   if a `style` slot is provided, its content is injected as a CSS stylesheet
+    before the script execution
+-   if a `preamble` slot is provided, it is inserted before the script. This
+    can be used to insert linked stylesheets, for example.
 
 ```html
 <code-playground>

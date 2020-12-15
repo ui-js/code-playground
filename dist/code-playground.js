@@ -534,7 +534,7 @@ TEMPLATE.innerHTML = `
     .cm-s-tomorrow-night .CodeMirror-matchingbracket { text-decoration: underline; color: white !important; }    
 
   </style>
-  <slot name="style"></slot>
+  <slot name="style"></slot><slot name="preamble"></slot>
 `;
 const CONSOLE_MAX_LINES = 1000;
 // interface Window {
@@ -945,7 +945,7 @@ class CodePlaygroundElement extends HTMLElement {
             return '';
         });
         // Important: keep the ${script} on a separate line. The content could
-        // be "// a comment" which would result in the script failign to parse
+        // be "// a comment" which would result in the script failing to parse
         return (imports
             .map((x) => {
             if (this.moduleMap[x[2]]) {
