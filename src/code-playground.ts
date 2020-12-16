@@ -209,6 +209,10 @@ TEMPLATE.innerHTML = `
       margin-bottom: .5em;
       margin-top: -8px;
     }
+    .stack-layout .tab:last-child {
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
     .stack-layout .tab:first-child {
       border-top-left-radius: 36px;
       border-top-right-radius: 36px
@@ -319,11 +323,14 @@ TEMPLATE.innerHTML = `
       visibility: visible;
     }
     .buttons {
-      display: flex;
+      display: none;
       justify-content: space-between;
       padding-left: 1em;
       padding-right: 1em;
       padding-bottom: .5em;
+    }
+    .buttons.visible {
+        display: flex;
     }
     .button {
       display: inline-block;
@@ -586,7 +593,12 @@ export class CodePlaygroundElement extends HTMLElement {
     resizeObserver: ResizeObserver;
 
     static get observedAttributes(): string[] {
-        return ['activetab', 'layout', 'showlinenumbers'];
+        return [
+            'active-tab',
+            'layout',
+            'show-line-numbers',
+            'button-bar-visibility',
+        ];
     }
 
     get outputStylesheets(): string[] {
@@ -602,7 +614,7 @@ export class CodePlaygroundElement extends HTMLElement {
         oldValue: string,
         newValue: string
     ): void {
-        if (name === 'activetab' && oldValue !== newValue) {
+        if (name === 'active-tab' && oldValue !== newValue) {
             this.activateTab(newValue);
         } else if (name === 'layout' && oldValue !== newValue) {
             this.shadowRoot
@@ -611,7 +623,7 @@ export class CodePlaygroundElement extends HTMLElement {
             this.shadowRoot
                 .querySelector<HTMLElement>(':host > div')
                 .classList.toggle('stack-layout', newValue === 'stack');
-        } else if (name === 'showlinenumbers' && oldValue !== newValue) {
+        } else if (name === 'show-line-numbers' && oldValue !== newValue) {
             this.shadowRoot
                 .querySelectorAll('textarea + .CodeMirror')
                 .forEach((x) =>
@@ -632,7 +644,7 @@ export class CodePlaygroundElement extends HTMLElement {
         container.id = this.containerId;
         const containerContent = `<div class='original-content'><slot name="html"></slot><slot name="css"></slot><slot name="javascript"></slot></div>
 <div class='source'><div class='tabs'></div>
-<div class='buttons'>
+<div class='buttons visible'>
 <button id='reset-button' class='button' disabled><svg aria-hidden="true" focusable="false" data-prefix="far" data-icon="history" class="svg-inline--fa fa-history fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M504 255.532c.252 136.64-111.182 248.372-247.822 248.468-64.014.045-122.373-24.163-166.394-63.942-5.097-4.606-5.3-12.543-.443-17.4l16.96-16.96c4.529-4.529 11.776-4.659 16.555-.395C158.208 436.843 204.848 456 256 456c110.549 0 200-89.468 200-200 0-110.549-89.468-200-200-200-55.52 0-105.708 22.574-141.923 59.043l49.091 48.413c7.641 7.535 2.305 20.544-8.426 20.544H26.412c-6.627 0-12-5.373-12-12V45.443c0-10.651 12.843-16.023 20.426-8.544l45.097 44.474C124.866 36.067 187.15 8 256 8c136.811 0 247.747 110.781 248 247.532zm-167.058 90.173l14.116-19.409c3.898-5.36 2.713-12.865-2.647-16.763L280 259.778V116c0-6.627-5.373-12-12-12h-24c-6.627 0-12 5.373-12 12v168.222l88.179 64.13c5.36 3.897 12.865 2.712 16.763-2.647z"></path></svg>Reset</button>
 <button id='run-button' class='button'><svg aria-hidden="true" focusable="false" data-prefix="far" data-icon="play" class="svg-inline--fa fa-play fa-w-14" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path fill="currentColor" d="M424.4 214.7L72.4 6.6C43.8-10.3 0 6.1 0 47.9V464c0 37.5 40.7 60.1 72.4 41.3l352-208c31.4-18.5 31.5-64.1 0-82.6zM48 453.5v-395c0-4.6 5.1-7.5 9.1-5.2l334.2 197.5c3.9 2.3 3.9 8 0 10.3L57.1 458.7c-4 2.3-9.1-.6-9.1-5.2z"></path></svg>Run</button>
 </div></div>
@@ -670,6 +682,19 @@ export class CodePlaygroundElement extends HTMLElement {
         });
     }
 
+    get buttonBarVisibility(): string {
+        return this.getAttribute('button-bar-visibility') ?? 'auto';
+    }
+    set buttonBarVisibility(value: string) {
+        this.setAttribute('button-bar-visibility', value);
+    }
+
+    get buttonBarVisible(): boolean {
+        return this.shadowRoot
+            .querySelector('.buttons')
+            .classList.contains('visible');
+    }
+
     connectedCallback(): void {
         const styleSlot = this.shadowRoot.querySelector<HTMLSlotElement>(
             'slot[name=style]'
@@ -682,6 +707,14 @@ export class CodePlaygroundElement extends HTMLElement {
             const style = document.createElement('style');
             style.textContent = styleContent;
             this.shadowRoot.appendChild(style);
+        }
+        if (
+            this.buttonBarVisibility === 'auto' ||
+            this.buttonBarVisibility === 'hidden'
+        ) {
+            this.shadowRoot
+                .querySelector('.buttons')
+                .classList.remove('visible');
         }
     }
 
@@ -742,16 +775,26 @@ export class CodePlaygroundElement extends HTMLElement {
                         '.tab > label'
                     ).style.display = 'none')
             );
-            const visibleTab = shadowRoot.querySelector<HTMLElement>(
-                '.tab .content'
-            );
-            visibleTab.style.marginTop = '8px';
-            visibleTab.style.borderTopLeftRadius = '8px';
-            visibleTab.style.borderTopRightRadius = '8px';
         } else {
             shadowRoot.querySelectorAll('.tab label').forEach((x) => {
                 x.addEventListener('click', activateTab);
             });
+        }
+        const firstTab = tabs[0];
+        const lastTab = tabs[tabs.length - 1];
+        if (tabs.length > 1) {
+            firstTab.style.marginTop = '8px';
+        } else {
+            const tabContent = firstTab.querySelector<HTMLElement>('.content');
+            tabContent.style.borderTopLeftRadius = '8px';
+            tabContent.style.borderTopRightRadius = '8px';
+        }
+        if (!this.buttonBarVisible) {
+            const tabContent = lastTab.querySelector<HTMLElement>('.content');
+            tabContent.style.borderBottomLeftRadius = '8px';
+            tabContent.style.borderBottomRightRadius = '8px';
+            lastTab.style.marginBottom = '0';
+            lastTab.style.paddingBottom = '0';
         }
 
         // 4. Setup editors
@@ -946,6 +989,16 @@ export class CodePlaygroundElement extends HTMLElement {
         this.shadowRoot.querySelector<HTMLButtonElement>(
             '#reset-button'
         ).disabled = false;
+        if (this.buttonBarVisibility === 'auto') {
+            this.shadowRoot.querySelector('.buttons').classList.add('visible');
+            const tabs = this.shadowRoot.querySelectorAll<HTMLElement>('.tab');
+            const lastTab = tabs[tabs.length - 1];
+            const tabContent = lastTab.querySelector<HTMLElement>('.content');
+            tabContent.style.borderBottomLeftRadius = '0';
+            tabContent.style.borderBottomRightRadius = '0';
+            lastTab.style.marginBottom = '0.5em';
+            lastTab.style.paddingBottom = '0.5em';
+        }
     }
 
     resetPlayground(): void {
@@ -1128,33 +1181,29 @@ export class CodePlaygroundElement extends HTMLElement {
     // Property/attributes
     //
 
-    // 'activetab' is the name of the currently visible tab
+    // 'active-tab' is the name of the currently visible tab
     get activeTab(): string {
-        return this.hasAttribute('activetab')
-            ? this.getAttribute('activetab')
-            : '';
+        return this.getAttribute('active-tab') ?? '';
     }
 
     set activeTab(val: string) {
         if (val) {
-            this.setAttribute('activetab', val);
+            this.setAttribute('active-tab', val);
         } else {
-            this.removeAttribute('activetab');
+            this.removeAttribute('active-tab');
         }
     }
 
     // 'showlinenumbers' is true if line numbers should be displayed
     get showLineNumbers(): boolean {
-        return this.hasAttribute('showlinenumbers')
-            ? this.getAttribute('showlinenumbers') === 'true'
-            : true;
+        return this.hasAttribute('show-line-numbers');
     }
 
     set showLineNumbers(val: boolean) {
         if (val) {
-            this.setAttribute('showlinenumbers', val ? 'true' : 'false');
+            this.setAttribute('show-line-numbers', '');
         } else {
-            this.removeAttribute('showlinenumbers');
+            this.removeAttribute('show-line-numbers');
         }
     }
 }

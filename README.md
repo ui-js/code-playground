@@ -80,16 +80,17 @@ The attributes can be specified directly on the component, e.g.
 There are corresponding properties for the attributes which can be
 accessed via JavaScript.
 
-| Attribute         | Property          |                                                                                                                      |
-| ----------------- | ----------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `layout`          |                   | `stack` (each section is displayed in a column) or `tabs` (each section is displayed in a panel with a tab selector) |
-| `activetab`       | `activeTab`       | `html`, `javascript` or `css`: indicate which tab is visible                                                         |
-| `showlinenumbers` | `showLineNumbers` | `true` or `false`. If true, displays line numbers in the gutter of the source code.                                  |
+| Attribute               | Property              |                                                                                                                                      |
+| ----------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `layout`                |                       | `stack` (each section is displayed in a column) or `tabs` (each section is displayed in a panel with a tab selector)                 |
+| `active-tab`            | `activeTab`           | `html`, `javascript` or `css`: indicate which tab is visible                                                                         |
+| `show-line-numbers`     | `showLineNumbers`     | `true` or `false`. If true, displays line numbers in the gutter of the source code.                                                  |
+| `button-bar-visibility` | `buttonBarVisibility` | `visible`: always show the button bar, `hidden`: never show the button bar, `auto`: show the button bar when the content is modified |
 
 A stylesheet can be injected by defining a `style` slot:
 
 ```html
-<code-playground layout="stack" showlinenumbers="true">
+<code-playground layout="stack" show-line-numbers>
     <style slot="style">
         .grey-zone {
             background: grey;
