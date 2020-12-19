@@ -1,6 +1,6 @@
 {
     "name": "@ui-js/code-playground",
-    "version": "1.6.0",
+    "version": "1.7.0",
     "description": "A web component to display editable, executable code",
     "scripts": {
         "build": "bash ./scripts/build.sh",
