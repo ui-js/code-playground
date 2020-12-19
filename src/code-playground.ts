@@ -24,6 +24,8 @@ const YELLOW = base0a;
 const TAB_HEIGHT = 36;
 const TAB_WIDTH = 150;
 
+const DEFAULT_AUTORUN_DELAY = 1000;
+
 const TEMPLATE = document.createElement('template');
 TEMPLATE.innerHTML = `
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/codemirror.min.css">
@@ -78,6 +80,12 @@ TEMPLATE.innerHTML = `
       font-family: 'JetBrains Mono', 'IBM Plex Mono', 'Fira Code', 'Source Code Pro',  monospace;
       font-size: 16px;
       line-height: 1.2;
+    }
+    #run-button {
+        display: none;
+    }
+    #run-button.visible {
+        display: inline-block;
     }
     .source textarea {
       color: ${base05};
@@ -582,15 +590,12 @@ interface ResizeObserverSize {
     readonly blockSize: number;
 }
 
-// interface Window {
-//   ResizeObserver: typeof ResizeObserver;
-// }
-
 export class CodePlaygroundElement extends HTMLElement {
-    dirty = false;
-    containerId: string;
-    moduleMap: { [module: string]: string };
-    resizeObserver: ResizeObserver;
+    private dirty = false;
+    private containerId: string;
+    private moduleMap: { [module: string]: string };
+    private resizeObserver: ResizeObserver;
+    private runTimer: number;
 
     static get observedAttributes(): string[] {
         return [
@@ -598,6 +603,7 @@ export class CodePlaygroundElement extends HTMLElement {
             'layout',
             'show-line-numbers',
             'button-bar-visibility',
+            'autorun',
         ];
     }
 
@@ -607,6 +613,23 @@ export class CodePlaygroundElement extends HTMLElement {
     }
     set outputStylesheets(value: string[]) {
         this.setAttribute('output-stylesheets', value.join(' '));
+    }
+
+    get autorun(): 'never' | number {
+        if (!this.hasAttribute('autorun')) return DEFAULT_AUTORUN_DELAY;
+        const value = this.getAttribute('autorun');
+        if (value === 'never') return 'never';
+        if (isFinite(parseFloat(value))) return parseFloat(value);
+        return DEFAULT_AUTORUN_DELAY;
+    }
+    set autorun(value: 'never' | number) {
+        this.setAttribute('autorun', value.toString());
+        const runButton = this.shadowRoot.getElementById('run-botton');
+        if (value === 'never') {
+            runButton.classList.add('visible');
+        } else {
+            runButton.classList.remove('visible');
+        }
     }
 
     attributeChangedCallback(
@@ -998,6 +1021,19 @@ export class CodePlaygroundElement extends HTMLElement {
             tabContent.style.borderBottomRightRadius = '0';
             lastTab.style.marginBottom = '0.5em';
             lastTab.style.paddingBottom = '0.5em';
+
+            if (this.autorun === 'never') {
+                const runButton = this.shadowRoot.getElementById('run-botton');
+                runButton.classList.add('visible');
+            } else {
+                if (this.runTimer) {
+                    clearTimeout(this.runTimer);
+                }
+                this.runTimer = setTimeout(
+                    () => this.runPlayground(),
+                    this.autorun
+                );
+            }
         }
     }
 

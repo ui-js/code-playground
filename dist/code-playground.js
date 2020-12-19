@@ -22,6 +22,7 @@ const YELLOW = base0a;
 // const GREEN = base0b;
 const TAB_HEIGHT = 36;
 const TAB_WIDTH = 150;
+const DEFAULT_AUTORUN_DELAY = 1000;
 const TEMPLATE = document.createElement('template');
 TEMPLATE.innerHTML = `
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/codemirror.min.css">
@@ -76,6 +77,12 @@ TEMPLATE.innerHTML = `
       font-family: 'JetBrains Mono', 'IBM Plex Mono', 'Fira Code', 'Source Code Pro',  monospace;
       font-size: 16px;
       line-height: 1.2;
+    }
+    #run-button {
+        display: none;
+    }
+    #run-button.visible {
+        display: inline-block;
     }
     .source textarea {
       color: ${base05};
@@ -544,9 +551,6 @@ TEMPLATE.innerHTML = `
   <slot name="style"></slot><slot name="preamble"></slot>
 `;
 const CONSOLE_MAX_LINES = 1000;
-// interface Window {
-//   ResizeObserver: typeof ResizeObserver;
-// }
 class CodePlaygroundElement extends HTMLElement {
     constructor() {
         var _a;
@@ -602,6 +606,7 @@ class CodePlaygroundElement extends HTMLElement {
             'layout',
             'show-line-numbers',
             'button-bar-visibility',
+            'autorun',
         ];
     }
     get outputStylesheets() {
@@ -611,6 +616,26 @@ class CodePlaygroundElement extends HTMLElement {
     }
     set outputStylesheets(value) {
         this.setAttribute('output-stylesheets', value.join(' '));
+    }
+    get autorun() {
+        if (!this.hasAttribute('autorun'))
+            return DEFAULT_AUTORUN_DELAY;
+        const value = this.getAttribute('autorun');
+        if (value === 'never')
+            return 'never';
+        if (isFinite(parseFloat(value)))
+            return parseFloat(value);
+        return DEFAULT_AUTORUN_DELAY;
+    }
+    set autorun(value) {
+        this.setAttribute('autorun', value.toString());
+        const runButton = this.shadowRoot.getElementById('run-botton');
+        if (value === 'never') {
+            runButton.classList.add('visible');
+        }
+        else {
+            runButton.classList.remove('visible');
+        }
     }
     attributeChangedCallback(name, oldValue, newValue) {
         if (name === 'active-tab' && oldValue !== newValue) {
@@ -893,6 +918,16 @@ class CodePlaygroundElement extends HTMLElement {
             tabContent.style.borderBottomRightRadius = '0';
             lastTab.style.marginBottom = '0.5em';
             lastTab.style.paddingBottom = '0.5em';
+            if (this.autorun === 'never') {
+                const runButton = this.shadowRoot.getElementById('run-botton');
+                runButton.classList.add('visible');
+            }
+            else {
+                if (this.runTimer) {
+                    clearTimeout(this.runTimer);
+                }
+                this.runTimer = setTimeout(() => this.runPlayground(), this.autorun);
+            }
         }
     }
     resetPlayground() {
