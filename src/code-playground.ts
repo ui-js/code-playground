@@ -125,7 +125,7 @@ TEMPLATE.innerHTML = `
       padding: 8px;
       border-radius: 8px;
       overflow: auto;
-      font-size: 14px;
+      font-size: 1em;
       color: ${base05};
       background: ${base00};
       white-space: pre-wrap;
@@ -317,7 +317,7 @@ TEMPLATE.innerHTML = `
       left: 0;
       right: 0;
       bottom: 0;
-      font-size: 14px;
+      font-size: 1em;
     }
     [type=radio]:hover ~ label {
       color: #fff;
@@ -1097,7 +1097,7 @@ export class CodePlaygroundElement extends HTMLElement {
                         .match(/:([0-9]+):([0-9]+)$/) || [];
                 appendConsole(
                     '<span class="error">' +
-                        (m[1] ? 'Line ' + m[1] + ': ' : '') +
+                        (m[1] ? 'Line ' + (parseInt(m[1]) - 1) + ': ' : '') +
                         err.message +
                         '</span>'
                 );
@@ -1166,22 +1166,22 @@ export class CodePlaygroundElement extends HTMLElement {
         // Replace document.querySelector.* et al with section.querySelector.*
         script = script.replace(
             /([^a-zA-Z0-9_-]?)document\s*\.\s*querySelector\s*\(/g,
-            '$1container' + jsID + '.querySelector('
+            '$1output' + jsID + '.querySelector('
         );
         script = script.replace(
             /([^a-zA-Z0-9_-]?)document\s*\.\s*querySelectorAll\s*\(/g,
-            '$1container' + jsID + '.querySelectorAll('
+            '$1output' + jsID + '.querySelectorAll('
         );
 
         script = script.replace(
             /([^a-zA-Z0-9_-]?)document\s*\.\s*getElementById\s*\(/g,
-            '$1container' + jsID + ".querySelector('#' + "
+            '$1output' + jsID + ".querySelector('#' + "
         );
 
         // Replace console.* with pseudoConsole.*
         script = script.replace(
             /([^a-zA-Z0-9_-])?console\s*\.\s*/g,
-            '$1shadowRoot' + jsID + '.host.pseudoConsole().'
+            '$1console' + jsID + '.'
         );
 
         // Extract import (can't be inside a try...catch block)
@@ -1205,11 +1205,12 @@ export class CodePlaygroundElement extends HTMLElement {
                     return x[0];
                 })
                 .join('\n') +
-            `const shadowRoot${jsID} = document.querySelector("#${this.id}").shadowRoot;` +
-            `const container${jsID} = shadowRoot${jsID}.querySelector("#${this.containerId} div.output");` +
-            'try{\n' +
+            `const playground${jsID} = document.getElementById("${this.id}").shadowRoot;` +
+            `const console${jsID} = playground${jsID}.host.pseudoConsole();` +
+            `const output${jsID} = playground${jsID}.querySelector("div.output");` +
+            'try{(async function() {\n' +
             script +
-            `\n} catch(err) { shadowRoot${jsID}.host.pseudoConsole().catch(err) }`
+            `\n}());} catch(err) { console${jsID}.catch(err) }`
         );
     }
 
