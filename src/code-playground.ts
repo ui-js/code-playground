@@ -821,7 +821,7 @@ export class CodePlaygroundElement extends HTMLElement {
         }
 
         // 4. Setup editors
-        if (typeof CodeMirror !== 'undefined') {
+        if (CodeMirror !== undefined) {
             this.resizeObserver.disconnect();
             shadowRoot
                 .querySelectorAll<HTMLTextAreaElement>('.tab .content textarea')
