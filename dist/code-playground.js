@@ -680,9 +680,7 @@ class CodePlaygroundElement extends HTMLElement {
         }
         if (this.buttonBarVisibility === 'auto' ||
             this.buttonBarVisibility === 'hidden') {
-            this.shadowRoot
-                .querySelector('.buttons')
-                .classList.remove('visible');
+            this.shadowRoot.querySelector('.buttons').classList.remove('visible');
         }
     }
     // The content of the code section has changed. Rebuild the tabs
@@ -804,7 +802,8 @@ class CodePlaygroundElement extends HTMLElement {
         this.shadowRoot
             .querySelector('.tabs')
             .style.setProperty('--tab-indicator-offset', activeTab.offsetLeft -
-            this.shadowRoot.querySelector('.tab:first-of-type').offsetLeft +
+            this.shadowRoot.querySelector('.tab:first-of-type')
+                .offsetLeft +
             'px');
         requestAnimationFrame(() => { var _a, _b; return (_b = (_a = activeTab
             .querySelector('textarea + .CodeMirror')) === null || _a === void 0 ? void 0 : _a['CodeMirror']) === null || _b === void 0 ? void 0 : _b.refresh(); });
@@ -856,8 +855,7 @@ class CodePlaygroundElement extends HTMLElement {
                 const href = x.trim();
                 if (href.length > 0) {
                     htmlContent =
-                        `<link rel="stylesheet" href="${href}"></link>` +
-                            htmlContent;
+                        `<link rel="stylesheet" href="${href}"></link>` + htmlContent;
                 }
             });
             section.querySelector('.output').innerHTML = htmlContent;
@@ -1205,8 +1203,7 @@ function asString(depth, value, options = {}) {
                     INDENT.repeat(depth + 1) +
                     result
                         .map((x, i) => '<span class="index">' + i + '</span>' + x.text)
-                        .join("<span class='sep'>, </span>\n" +
-                        INDENT.repeat(depth + 1)) +
+                        .join("<span class='sep'>, </span>\n" + INDENT.repeat(depth + 1)) +
                     '\n' +
                     INDENT.repeat(depth) +
                     "<span class='sep'>]</span>",
@@ -1230,11 +1227,7 @@ function asString(depth, value, options = {}) {
         let lineCount = 1;
         Array.from(value.attributes).forEach((x) => {
             result +=
-                ' ' +
-                    x.localName +
-                    '="' +
-                    value.getAttribute(x.localName) +
-                    '"';
+                ' ' + x.localName + '="' + value.getAttribute(x.localName) + '"';
         });
         result += '>';
         if (value.innerHTML) {
@@ -1324,8 +1317,7 @@ function asString(depth, value, options = {}) {
                 INDENT.repeat(depth + 1) +
                 propStrings
                     .map((x) => x.text)
-                    .join("</span><span class='sep'>,</span>\n" +
-                    INDENT.repeat(depth + 1)) +
+                    .join("</span><span class='sep'>,</span>\n" + INDENT.repeat(depth + 1)) +
                 '\n' +
                 INDENT.repeat(depth) +
                 "<span class='sep'>}</span>",
