@@ -27,528 +27,528 @@ const TEMPLATE = document.createElement('template');
 TEMPLATE.innerHTML = `
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/codemirror.min.css">
 <style>
-    :host {
-      display: block;
-      font-family:-apple-system, BlinkMacSystemFont, "Segoe UI",
-        Roboto, Oxygen-Sans, Ubuntu, Cantarell,
-        "Helvetica Neue", "Source Sans Pro", sans-serif;
-      line-height: 1.5;
-    }
-    :host([hidden]) {
+  :host {
+    display: block;
+    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI",
+      Roboto, Oxygen-Sans, Ubuntu, Cantarell,
+      "Helvetica Neue", "Source Sans Pro", sans-serif;
+    line-height: 1.5;
+  }
+  :host([hidden]) {
+    display: none;
+  }
+  :host > div {
+    display: flex;
+    flex-flow: row;
+    width: 100%;
+    height: 100%;
+    margin-left: 0;
+    margin-right: 0;
+    justify-content: center;
+    align-items: center;
+  }
+  :host > div.stack-layout {
+    display: block;
+  }
+  .original-content {
+    display: none;
+  }
+  .source {
+    display: flex;
+    flex-flow: column;
+    justify-content: space-between;
+    margin-top: 0;
+    margin-bottom: 0;
+    margin-right: .5em;
+    width: calc(50% - .5em);
+    height: 100%;
+    min-width: 300px;
+    padding: 8px;
+    border-radius: 8px;
+    background: ${base00};
+  }
+  textarea {
+    display: block;
+    border: 1px solid rgba(0,0,0,.25);
+    outline: none;
+    resize: vertical;
+    width: 100%;
+    min-height: 4em;
+    font-family: 'JetBrains Mono', 'IBM Plex Mono', 'Fira Code', 'Source Code Pro',  monospace;
+    font-size: 16px;
+    line-height: 1.2;
+  }
+  #run-button {
       display: none;
-    }
-    :host > div {
-      display: flex;
-      flex-flow: row;
-      width: 100%;
-      height: 100%;
-      margin-left: 0;
-      margin-right: 0;
-      justify-content: center;
-      align-items: center;
-    }
-    :host > div.stack-layout {
-      display: block;
-    }
-    .original-content {
-      display: none;
-    }
-    .source {
-      display: flex;
-      flex-flow: column;
-      justify-content: space-between;
-      margin-top: 0;
-      margin-bottom: 0;
-      margin-right: .5em;
-      width: calc(50% - .5em);
-      height: 100%;
-      min-width: 300px;
-      padding: 8px;
-      border-radius: 8px;
-      background: ${base00};
-    }
-    textarea {
-      display: block;
-      border: 1px solid rgba(0,0,0,.25);
-      outline: none;
-      resize: vertical;
-      width: 100%;
-      min-height: 4em;
-      font-family: 'JetBrains Mono', 'IBM Plex Mono', 'Fira Code', 'Source Code Pro',  monospace;
-      font-size: 16px;
-      line-height: 1.2;
-    }
-    #run-button {
-        display: none;
-    }
-    #run-button.visible {
-        display: inline-block;
-    }
-    .source textarea {
-      color: ${base05};
-      background: ${base00};
-      border: none;
-      height: 100%;
-    }
-    .result {
-      width: calc(50% - .5em);
-      margin-left: .5em;
-    }
-    .output {
-      border-radius: 8px;
-      padding: 8px;
-      border: 1px solid rgba(0, 0, 0, .2);
-    }
-    .output textarea {
-      width: calc(100% - 16px);
-    }
-    .stack-layout .source, .stack-layout .result {
-      width: auto;
-      margin: 0;
-      background: transparent
-    }
-    .stack-layout .source {
-      border: 1px solid rgba(0, 0, 0, .2);
-      padding: 0;
-    }
-    .stack-layout .result  {
-      margin-top: 2em;
-    }
-    .stack-layout [type=radio]:checked ~ label {
-      color: #666;
-    }
-    .console {
-      max-height: 50vh;
-      padding: 8px;
-      border-radius: 8px;
-      overflow: auto;
-      font-size: 1em;
-      color: ${base05};
-      background: ${base00};
-      white-space: pre-wrap;
-      border: 1px solid rgba(0, 0, 0, .2);
-    }
-    .console .sep {
-      color: ${base05};
-    }
-    .console .index {
-      color: ${base05};
-      opacity: .3;
-      float: left;
-      width: 0;
-      font-style: italic;
-    }
-    .console .boolean {
-      color: ${base0e};
-      font-weight: bold;
-    }
-    .console .empty {
-      color: ${base0e};
-      font-style: italic;
-    }
-    .console .null {
-      color: ${base0e};
-      font-style: italic;
-    }
-    .console .string {
-      color: ${base0a};
-      font-weight: bold;
-    }
-    .console .function {
-      color: ${base0b};
-    }
-    .console .number {
-      color: ${base0e};
-    }
-    .console .property {
+  }
+  #run-button.visible {
+      display: inline-block;
+  }
+  .source textarea {
+    color: ${base05};
+    background: ${base00};
+    border: none;
+    height: 100%;
+  }
+  .result {
+    width: calc(50% - .5em);
+    margin-left: .5em;
+  }
+  .output {
+    border-radius: 8px;
+    padding: 8px;
+    border: 1px solid rgba(0, 0, 0, .2);
+  }
+  .output textarea {
+    width: calc(100% - 16px);
+  }
+  .stack-layout .source, .stack-layout .result {
+    width: auto;
+    margin: 0;
+    background: transparent
+  }
+  .stack-layout .source {
+    border: 1px solid rgba(0, 0, 0, .2);
+    padding: 0;
+  }
+  .stack-layout .result  {
+    margin-top: 2em;
+  }
+  .stack-layout [type=radio]:checked ~ label {
+    color: #666;
+  }
+  .console {
+    max-height: 50vh;
+    padding: 8px;
+    border-radius: 8px;
+    overflow: auto;
+    font-size: 1em;
+    color: ${base05};
+    background: ${base00};
+    white-space: pre-wrap;
+    border: 1px solid rgba(0, 0, 0, .2);
+  }
+  .console .sep {
+    color: ${base05};
+  }
+  .console .index {
+    color: ${base05};
+    opacity: .3;
+    float: left;
+    width: 0;
+    font-style: italic;
+  }
+  .console .boolean {
+    color: ${base0e};
+    font-weight: bold;
+  }
+  .console .empty {
+    color: ${base0e};
+    font-style: italic;
+  }
+  .console .null {
+    color: ${base0e};
+    font-style: italic;
+  }
+  .console .string {
+    color: ${base0a};
+    font-weight: bold;
+  }
+  .console .function {
+    color: ${base0b};
+  }
+  .console .number {
+    color: ${base0e};
+  }
+  .console .property {
+    color: ${base0b}
+  }
+  .console .object {
       color: ${base0b}
     }
-    .console .object {
-        color: ${base0b}
-      }
-      .console .error {
-      display: block;
-      width: calc(100% - 10px);
-      padding-right: 4px;
-      padding-top: 8px;
-      padding-bottom:8px;
-      padding-left: 6px;
-      background: rgba(204, 102, 102, .4);
-      color: white;
-      border-left:  4px solid ${RED}
-    }
-    .console .warning {
-      color: ${YELLOW}
-    }
-    .console .group {
-      font-weight: bold;
-    }
-    
-    .tabs {
-      position: relative;   
+    .console .error {
+    display: block;
+    width: calc(100% - 10px);
+    padding-right: 4px;
+    padding-top: 8px;
+    padding-bottom:8px;
+    padding-left: 6px;
+    background: rgba(204, 102, 102, .4);
+    color: white;
+    border-left:  4px solid ${RED}
+  }
+  .console .warning {
+    color: ${YELLOW}
+  }
+  .console .group {
+    font-weight: bold;
+  }
+  
+  .tabs {
+    position: relative;   
+    display: flex;
+    flex-flow: row;
+    justify-content: center;
+    height: 100%;
+    clear: both;
+    --tab-indicator-offset: 0;
+  }
+  .stack-layout .tabs {
+    flex-flow: column;
+  }
+  .stack-layout .tab {
+    height: auto;
+    background: transparent;
+  }
+  .stack-layout .tab:first-of-type:after {
+    display: none;
+  }
+  .stack-layout .tab:first-child, .stack-layout .tab:last-child {
+    border: none;
+    border-radius: 0;
+    padding-left: 8px;
+    padding-right: 8px;
+    padding-bottom: .5em;
+    margin-left: -8px;
+    margin-right: -8px;
+    margin-bottom: .5em;
+    margin-top: -8px;
+  }
+  .stack-layout .tab:last-child {
+      margin-bottom: 0;
+      padding-bottom: 0;
+  }
+  .stack-layout .tab:first-child {
+    border-top-left-radius: 36px;
+    border-top-right-radius: 36px
+  }
+  .stack-layout .content {
+    visibility: visible;
+    position: relative;
+    top: auto;
+    left: auto;
+    bottom: auto;
+    padding-left: 1em;
+    background: ${base00};
+    overflow: hidden;
+  }
+  .stack-layout .tab > label {
+    display: block;
+    position: relative;
+    height: auto;
+    text-align: left;
+    padding-left: 1em;
+    padding-top: 1em;
+    padding-bottom: .5em;
+    color: #666;
+  }
+  .stack-layout .tab > input[type="radio"] {
+    visibility: hidden;
+  }
+  .tab {
+    min-width: ${TAB_WIDTH}px;
+    border-color: ${base02};
+    background: ${base01};
+    border-style: solid;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    height: ${TAB_HEIGHT}px;
+    border-left: none;
+    border-right: none;
+    box-sizing: content-box;
+  }
+
+  .tab:first-child {
+      border-top-left-radius: ${TAB_HEIGHT}px;
+      border-bottom-left-radius: ${TAB_HEIGHT}px;
+      border-left-width: 1px;
+      border-left-style: solid;
+      border-left-color: ${base02};
+  }
+
+  .tab:last-child {
+    border-top-right-radius: ${TAB_HEIGHT}px;
+    border-bottom-right-radius: ${TAB_HEIGHT}px;
+    border-right-width: 1px;
+    border-right-style: solid;
+    border-right-color: ${base02};
+  }
+  .tab:first-of-type:after {
+    content: '';
+    display: block;
+    position: relative;
+    width: ${TAB_WIDTH - 6}px;
+    margin: 0;
+    top: 3px;
+    height: ${TAB_HEIGHT - 6}px;
+    left: calc(3px + var(--tab-indicator-offset));
+    z-index: 0;
+    border-radius: ${TAB_HEIGHT}px;
+    background: ${base00};
+    transition-property: left;
+    transition-duration: 200ms;
+    transition-timing-function: ease-in-out;
+  }
+  .tab label {
+    position: absolute;
+    width: 150px;
+    height: ${TAB_HEIGHT}px;
+    padding-top: 8px;
+    padding-bottom: 6px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    font-size: 14px;
+    text-transform: uppercase;
+    text-align: center;
+    color: ${base05};
+    user-select: none;
+    z-index: 1;
+  }
+  .tab [type=radio] {
+    display: none;   
+  }
+  .content {
+    visibility: hidden;
+    position: absolute;
+    top: ${TAB_HEIGHT + 2}px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    font-size: 1em;
+  }
+  [type=radio]:hover ~ label {
+    color: #fff;
+  }
+  [type=radio]:checked ~ label {
+    color: #fff;
+    z-index: 2;
+  }
+  [type=radio]:checked ~ label ~ .content {
+    z-index: 1;
+    visibility: visible;
+  }
+  .buttons {
+    display: none;
+    justify-content: space-between;
+    padding-left: 1em;
+    padding-right: 1em;
+    padding-bottom: .5em;
+  }
+  .buttons.visible {
       display: flex;
-      flex-flow: row;
-      justify-content: center;
-      height: 100%;
-      clear: both;
-      --tab-indicator-offset: 0;
+  }
+  .button {
+    display: inline-block;
+    margin-bottom: 0.25em;
+    padding: 0.5em 1em;
+    font-size: 14px;
+    min-height: 30px;
+    margin-top: 6px;
+    margin-bottom: 6px;
+    font-weight: 700;
+    text-align: center;
+    text-decoration: none;
+    border-radius: 4px;
+    cursor: pointer;
+    user-select: none;
+    text-transform: uppercase;
+    outline: none;
+    background: ${base01};
+    color: ${base05};
+    border: 1px solid #111;
+  }
+  .stack-layout .button {
+    color: #333;
+    background: transparent;
+    border: 1px solid #ccc;
+  }
+  .button:disabled {
+    opacity: .5;
+  }
+  .button svg {
+    height: 1em;
+    width: 1em;
+    margin-right: .55em;
+    vertical-align: -.12em;
+  }
+  .button:enabled:hover, .button:enabled:active {
+    color: #0066ce;
+    border: 1px solid #0066ce;
+  }
+  .button:enabled:active {
+    color: #fff;
+    background: #0066ce;
+    border: 1px solid #0066ce;
+  }
+  .mathfield {
+    display: block;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: .5em;
+    font-size: 2rem;
+    background: #fff;
+  }
+  @media (max-width: 777px) { 
+    :host > div {
+        flex-flow: column;
     }
-    .stack-layout .tabs {
-      flex-flow: column;
+    .source, .result {
+        width: calc(100% - 1em);
+        margin-left: .5em;
+        margin-right: .5em;
+        margin-top: .5em;
+        margin-bottom: .5em;
     }
-    .stack-layout .tab {
-      height: auto;
-      background: transparent;
-    }
-    .stack-layout .tab:first-of-type:after {
-      display: none;
-    }
-    .stack-layout .tab:first-child, .stack-layout .tab:last-child {
-      border: none;
-      border-radius: 0;
-      padding-left: 8px;
-      padding-right: 8px;
-      padding-bottom: .5em;
-      margin-left: -8px;
-      margin-right: -8px;
-      margin-bottom: .5em;
-      margin-top: -8px;
-    }
-    .stack-layout .tab:last-child {
-        margin-bottom: 0;
-        padding-bottom: 0;
-    }
-    .stack-layout .tab:first-child {
-      border-top-left-radius: 36px;
-      border-top-right-radius: 36px
-    }
-    .stack-layout .content {
-      visibility: visible;
-      position: relative;
-      top: auto;
-      left: auto;
-      bottom: auto;
-      padding-left: 1em;
+  }
+
+
+  /* Tomorrow Comment */
+  .hljs-comment,
+  .hljs-title {
+      color: ${base04};
+      font-style: italic;
+  }
+  
+  /* Tomorrow Red */
+  .hljs-variable,
+  .hljs-attribute,
+  .hljs-tag,
+  .hljs-regexp,
+  .ruby .hljs-constant,
+  .xml .hljs-tag .hljs-title,
+  .xml .hljs-pi,
+  .xml .hljs-doctype,
+  .html .hljs-doctype,
+  .css .hljs-id,
+  .css .hljs-class,
+  .css .hljs-pseudo {
+      color: ${base0c};
+  }
+  
+  /* Tomorrow Orange */
+  .hljs-number,
+  .hljs-preprocessor,
+  .hljs-built_in,
+  .hljs-literal,
+  .hljs-params,
+  .hljs-constant {
+      color: ${base09};
+      font-weight: normal;
+  }
+  
+  /* Tomorrow Yellow */
+  .ruby .hljs-class .hljs-title,
+  .css .hljs-rules .hljs-attribute {
+      color: ${base0a};
+  }
+  
+  /* Tomorrow Green */
+  .hljs-string,
+  .hljs-value,
+  .hljs-inheritance,
+  .hljs-header,
+  .ruby .hljs-symbol,
+  .xml .hljs-cdata {
+      color: ${base0b};
+  }
+  
+  /* Tomorrow Aqua */
+  .css .hljs-hexcolor {
+      color: ${base08};
+  }
+  
+  /* Tomorrow Blue */
+  .hljs-function,
+  .python .hljs-decorator,
+  .python .hljs-title,
+  .ruby .hljs-function .hljs-title,
+  .ruby .hljs-title .hljs-keyword,
+  .perl .hljs-sub,
+  .javascript .hljs-title,
+  .coffeescript .hljs-title {
+      color: ${base0d};
+      font-weight: bold;
+  }
+  
+  /* Tomorrow Purple */
+  .hljs-keyword,
+  .javascript .hljs-function {
+      color: ${base0e};
+      font-weight: bold;
+  }
+  
+  .hljs {
+      display: block;
       background: ${base00};
-      overflow: hidden;
-    }
-    .stack-layout .tab > label {
-      display: block;
-      position: relative;
-      height: auto;
-      text-align: left;
-      padding-left: 1em;
-      padding-top: 1em;
-      padding-bottom: .5em;
-      color: #666;
-    }
-    .stack-layout .tab > input[type="radio"] {
-      visibility: hidden;
-    }
-    .tab {
-      min-width: ${TAB_WIDTH}px;
-      border-color: ${base02};
-      background: ${base01};
-      border-style: solid;
-      border-top-width: 1px;
-      border-bottom-width: 1px;
-      height: ${TAB_HEIGHT}px;
-      border-left: none;
-      border-right: none;
-      box-sizing: content-box;
-    }
-
-    .tab:first-child {
-        border-top-left-radius: ${TAB_HEIGHT}px;
-        border-bottom-left-radius: ${TAB_HEIGHT}px;
-        border-left-width: 1px;
-        border-left-style: solid;
-        border-left-color: ${base02};
-    }
-
-    .tab:last-child {
-      border-top-right-radius: ${TAB_HEIGHT}px;
-      border-bottom-right-radius: ${TAB_HEIGHT}px;
-      border-right-width: 1px;
-      border-right-style: solid;
-      border-right-color: ${base02};
-    }
-    .tab:first-of-type:after {
-      content: '';
-      display: block;
-      position: relative;
-      width: ${TAB_WIDTH - 6}px;
-      margin: 0;
-      top: 3px;
-      height: ${TAB_HEIGHT - 6}px;
-      left: calc(3px + var(--tab-indicator-offset));
-      z-index: 0;
-      border-radius: ${TAB_HEIGHT}px;
-      background: ${base00};
-      transition-property: left;
-      transition-duration: 200ms;
-      transition-timing-function: ease-in-out;
-    }
-    .tab label {
-      position: absolute;
-      width: 150px;
-      height: ${TAB_HEIGHT}px;
-      padding-top: 8px;
-      padding-bottom: 6px;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-      font-size: 14px;
-      text-transform: uppercase;
-      text-align: center;
       color: ${base05};
-      user-select: none;
-      z-index: 1;
-    }
-    .tab [type=radio] {
-      display: none;   
-    }
-    .content {
-      visibility: hidden;
-      position: absolute;
-      top: ${TAB_HEIGHT + 2}px;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      font-size: 1em;
-    }
-    [type=radio]:hover ~ label {
-      color: #fff;
-    }
-    [type=radio]:checked ~ label {
-      color: #fff;
-      z-index: 2;
-    }
-    [type=radio]:checked ~ label ~ .content {
-      z-index: 1;
-      visibility: visible;
-    }
-    .buttons {
-      display: none;
-      justify-content: space-between;
-      padding-left: 1em;
-      padding-right: 1em;
-      padding-bottom: .5em;
-    }
-    .buttons.visible {
-        display: flex;
-    }
-    .button {
-      display: inline-block;
-      margin-bottom: 0.25em;
-      padding: 0.5em 1em;
-      font-size: 14px;
-      min-height: 30px;
-      margin-top: 6px;
-      margin-bottom: 6px;
-      font-weight: 700;
-      text-align: center;
-      text-decoration: none;
-      border-radius: 4px;
-      cursor: pointer;
-      user-select: none;
-      text-transform: uppercase;
-      outline: none;
-      background: ${base01};
-      color: ${base05};
-      border: 1px solid #111;
-    }
-    .stack-layout .button {
-      color: #333;
-      background: transparent;
-      border: 1px solid #ccc;
-    }
-    .button:disabled {
-      opacity: .5;
-    }
-    .button svg {
-      height: 1em;
-      width: 1em;
-      margin-right: .55em;
-      vertical-align: -.12em;
-    }
-    .button:enabled:hover, .button:enabled:active {
-      color: #0066ce;
-      border: 1px solid #0066ce;
-    }
-    .button:enabled:active {
-      color: #fff;
-      background: #0066ce;
-      border: 1px solid #0066ce;
-    }
-    .mathfield {
-      display: block;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      padding: .5em;
-      font-size: 2rem;
-      background: #fff;
-    }
-    @media (max-width: 777px) { 
-      :host > div {
-          flex-flow: column;
-      }
-      .source, .result {
-          width: calc(100% - 1em);
-          margin-left: .5em;
-          margin-right: .5em;
-          margin-top: .5em;
-          margin-bottom: .5em;
-      }
-    }
+      padding: 0.5em;
+  }
+  
+  .coffeescript .javascript,
+  .javascript .xml,
+  .tex .hljs-formula,
+  .xml .javascript,
+  .xml .vbscript,
+  .xml .css,
+  .xml .hljs-cdata {
+      opacity: 0.5;
+  }
+  
+  // Rouge typographic adjustments.
+  // See https://github.com/rouge-ruby/rouge/wiki/List-of-tokens
+  
+  .highlight .c1,     // Single line comment
+  .highlight .cm      // Multiline comment
+    {
+      font-style: italic;
+  }
+  
+  .highlight .k,       // keywords
+  .highlight .kc,       // keywords constant
+  .highlight .kd,       // keywords declaration
+  .highlight .kn,       // keywords namespace
+  .highlight .kp,       // keywords pseudi
+  .highlight .kr,       // keywords reserved
+  .highlight .kt,       // keywords type
+  .highlight .kv       // keywords variable
+    {
+      font-weight: bold;
+  }
+  
+  .CodeMirror {
+    font-family: 'JetBrains Mono', 'IBM Plex Mono', 'Fira Code', 'Source Code Pro',  monospace;
+  }
+  .cm-s-tomorrow-night.CodeMirror { background: ${base00}; color: ${base05}; }
+  .cm-s-tomorrow-night div.CodeMirror-selected { background: ${base01}; }
+  .cm-s-tomorrow-night .CodeMirror-line::selection, .cm-s-tomorrow-night .CodeMirror-line > span::selection, .cm-s-tomorrow-night .CodeMirror-line > span > span::selection { background: rgba(45, 45, 45, 0.99); }
+  .cm-s-tomorrow-night .CodeMirror-line::-moz-selection, .cm-s-tomorrow-night .CodeMirror-line > span::-moz-selection, .cm-s-tomorrow-night .CodeMirror-line > span > span::-moz-selection { background: rgba(45, 45, 45, 0.99); }
+  .cm-s-tomorrow-night .CodeMirror-gutters { background: ${base00}; border-right: 0px; }
+  .cm-s-tomorrow-night .CodeMirror-guttermarker { color: ${base0c}; }
+  .cm-s-tomorrow-night .CodeMirror-guttermarker-subtle { color: ${base03}; }
+  .cm-s-tomorrow-night .CodeMirror-linenumber { color: ${base04}; opacity: .4; }
+  .cm-s-tomorrow-night .CodeMirror-cursor { border-left: 1px solid ${base0d}; }
+  
+  .cm-s-tomorrow-night span.cm-comment { color: ${base09}; }
+  .cm-s-tomorrow-night span.cm-atom { color: ${base0e}; }
+  .cm-s-tomorrow-night span.cm-number { color: ${base0e}; }
+  
+  .cm-s-tomorrow-night span.cm-property, .cm-s-tomorrow-night span.cm-attribute { color: ${base0b}; }
+  .cm-s-tomorrow-night span.cm-keyword { color: ${base0c}; }
+  .cm-s-tomorrow-night span.cm-string { color: ${base0a}; }
+  
+  .cm-s-tomorrow-night span.cm-variable { color: ${base0b}; }
+  .cm-s-tomorrow-night span.cm-variable-2 { color: ${base0d}; }
+  .cm-s-tomorrow-night span.cm-def { color: ${base09}; }
+  .cm-s-tomorrow-night span.cm-bracket { color: ${base05}; }
+  .cm-s-tomorrow-night span.cm-tag { color: ${base0c}; }
+  .cm-s-tomorrow-night span.cm-link { color: ${base0e}; }
+  .cm-s-tomorrow-night span.cm-error { background: ${base0c}; color: ${base03}; }
+  
+  .cm-s-tomorrow-night .CodeMirror-activeline-background { background: ${base02}; }
+  .cm-s-tomorrow-night .CodeMirror-matchingbracket { text-decoration: underline; color: white !important; }    
 
-
-    /* Tomorrow Comment */
-    .hljs-comment,
-    .hljs-title {
-        color: ${base04};
-        font-style: italic;
-    }
-    
-    /* Tomorrow Red */
-    .hljs-variable,
-    .hljs-attribute,
-    .hljs-tag,
-    .hljs-regexp,
-    .ruby .hljs-constant,
-    .xml .hljs-tag .hljs-title,
-    .xml .hljs-pi,
-    .xml .hljs-doctype,
-    .html .hljs-doctype,
-    .css .hljs-id,
-    .css .hljs-class,
-    .css .hljs-pseudo {
-        color: ${base0c};
-    }
-    
-    /* Tomorrow Orange */
-    .hljs-number,
-    .hljs-preprocessor,
-    .hljs-built_in,
-    .hljs-literal,
-    .hljs-params,
-    .hljs-constant {
-        color: ${base09};
-        font-weight: normal;
-    }
-    
-    /* Tomorrow Yellow */
-    .ruby .hljs-class .hljs-title,
-    .css .hljs-rules .hljs-attribute {
-        color: ${base0a};
-    }
-    
-    /* Tomorrow Green */
-    .hljs-string,
-    .hljs-value,
-    .hljs-inheritance,
-    .hljs-header,
-    .ruby .hljs-symbol,
-    .xml .hljs-cdata {
-        color: ${base0b};
-    }
-    
-    /* Tomorrow Aqua */
-    .css .hljs-hexcolor {
-        color: ${base08};
-    }
-    
-    /* Tomorrow Blue */
-    .hljs-function,
-    .python .hljs-decorator,
-    .python .hljs-title,
-    .ruby .hljs-function .hljs-title,
-    .ruby .hljs-title .hljs-keyword,
-    .perl .hljs-sub,
-    .javascript .hljs-title,
-    .coffeescript .hljs-title {
-        color: ${base0d};
-        font-weight: bold;
-    }
-    
-    /* Tomorrow Purple */
-    .hljs-keyword,
-    .javascript .hljs-function {
-        color: ${base0e};
-        font-weight: bold;
-    }
-    
-    .hljs {
-        display: block;
-        background: ${base00};
-        color: ${base05};
-        padding: 0.5em;
-    }
-    
-    .coffeescript .javascript,
-    .javascript .xml,
-    .tex .hljs-formula,
-    .xml .javascript,
-    .xml .vbscript,
-    .xml .css,
-    .xml .hljs-cdata {
-        opacity: 0.5;
-    }
-    
-    // Rouge typographic adjustments.
-    // See https://github.com/rouge-ruby/rouge/wiki/List-of-tokens
-    
-    .highlight .c1,     // Single line comment
-    .highlight .cm      // Multiline comment
-     {
-        font-style: italic;
-    }
-    
-    .highlight .k,       // keywords
-    .highlight .kc,       // keywords constant
-    .highlight .kd,       // keywords declaration
-    .highlight .kn,       // keywords namespace
-    .highlight .kp,       // keywords pseudi
-    .highlight .kr,       // keywords reserved
-    .highlight .kt,       // keywords type
-    .highlight .kv       // keywords variable
-     {
-        font-weight: bold;
-    }
-    
-    .CodeMirror {
-      font-family: 'JetBrains Mono', 'IBM Plex Mono', 'Fira Code', 'Source Code Pro',  monospace;
-    }
-    .cm-s-tomorrow-night.CodeMirror { background: ${base00}; color: ${base05}; }
-    .cm-s-tomorrow-night div.CodeMirror-selected { background: ${base01}; }
-    .cm-s-tomorrow-night .CodeMirror-line::selection, .cm-s-tomorrow-night .CodeMirror-line > span::selection, .cm-s-tomorrow-night .CodeMirror-line > span > span::selection { background: rgba(45, 45, 45, 0.99); }
-    .cm-s-tomorrow-night .CodeMirror-line::-moz-selection, .cm-s-tomorrow-night .CodeMirror-line > span::-moz-selection, .cm-s-tomorrow-night .CodeMirror-line > span > span::-moz-selection { background: rgba(45, 45, 45, 0.99); }
-    .cm-s-tomorrow-night .CodeMirror-gutters { background: ${base00}; border-right: 0px; }
-    .cm-s-tomorrow-night .CodeMirror-guttermarker { color: ${base0c}; }
-    .cm-s-tomorrow-night .CodeMirror-guttermarker-subtle { color: ${base03}; }
-    .cm-s-tomorrow-night .CodeMirror-linenumber { color: ${base04}; opacity: .4; }
-    .cm-s-tomorrow-night .CodeMirror-cursor { border-left: 1px solid ${base0d}; }
-    
-    .cm-s-tomorrow-night span.cm-comment { color: ${base09}; }
-    .cm-s-tomorrow-night span.cm-atom { color: ${base0e}; }
-    .cm-s-tomorrow-night span.cm-number { color: ${base0e}; }
-    
-    .cm-s-tomorrow-night span.cm-property, .cm-s-tomorrow-night span.cm-attribute { color: ${base0b}; }
-    .cm-s-tomorrow-night span.cm-keyword { color: ${base0c}; }
-    .cm-s-tomorrow-night span.cm-string { color: ${base0a}; }
-    
-    .cm-s-tomorrow-night span.cm-variable { color: ${base0b}; }
-    .cm-s-tomorrow-night span.cm-variable-2 { color: ${base0d}; }
-    .cm-s-tomorrow-night span.cm-def { color: ${base09}; }
-    .cm-s-tomorrow-night span.cm-bracket { color: ${base05}; }
-    .cm-s-tomorrow-night span.cm-tag { color: ${base0c}; }
-    .cm-s-tomorrow-night span.cm-link { color: ${base0e}; }
-    .cm-s-tomorrow-night span.cm-error { background: ${base0c}; color: ${base03}; }
-    
-    .cm-s-tomorrow-night .CodeMirror-activeline-background { background: ${base02}; }
-    .cm-s-tomorrow-night .CodeMirror-matchingbracket { text-decoration: underline; color: white !important; }    
-
-  </style>
-  <slot name="style"></slot><slot name="preamble"></slot>
+</style>
+<slot name="style"></slot><slot name="preamble"></slot>
 `;
 const CONSOLE_MAX_LINES = 1000;
 class CodePlaygroundElement extends HTMLElement {
