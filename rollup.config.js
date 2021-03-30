@@ -1,7 +1,7 @@
 import { terser } from 'rollup-plugin-terser';
 import resolve from '@rollup/plugin-node-resolve';
 import typescript from 'rollup-plugin-typescript2';
-import eslint from '@rbnlffl/rollup-plugin-eslint';
+// import eslint from '@rbnlffl/rollup-plugin-eslint';
 
 import pkg from './package.json';
 
@@ -64,7 +64,7 @@ const ROLLUP = [
       format: 'es',
       sourcemap: true,
     },
-    plugins: [eslint(), resolve(), typescript(TYPESCRIPT_OPTIONS)],
+    plugins: [resolve(), typescript(TYPESCRIPT_OPTIONS)],
   },
 ];
 
