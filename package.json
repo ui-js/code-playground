@@ -5,7 +5,7 @@
   "scripts": {
     "build": "bash ./scripts/build.sh",
     "dist": "bash ./scripts/build.sh production",
-    "lint": "eslint --fix src/**",
+    "lint": "eslint --fix src/*.ts",
     "test": "echo \"Error: no test specified\" && exit 1",
     "preversion": "bash ./scripts/build.sh production"
   },
@@ -36,7 +36,7 @@
     "autoprefixer": "^10.2.4",
     "cssnano": "^4.1.10",
     "eslint": "^7.19.0",
-    "eslint-config-prettier": "^7.2.0",
+    "eslint-config-prettier": "^8.1.0",
     "eslint-config-standard": "^16.0.2",
     "eslint-plugin-import": "^2.22.1",
     "eslint-plugin-node": "^11.1.0",
