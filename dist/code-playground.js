@@ -805,11 +805,8 @@ class CodePlaygroundElement extends HTMLElement {
             this.shadowRoot.querySelector('.tab:first-of-type')
                 .offsetLeft +
             'px');
-        requestAnimationFrame(() => {
-            var _a, _b;
-            return (_b = (_a = activeTab
-                .querySelector('textarea + .CodeMirror')) === null || _a === void 0 ? void 0 : _a['CodeMirror']) === null || _b === void 0 ? void 0 : _b.refresh();
-        });
+        requestAnimationFrame(() => { var _a, _b; return (_b = (_a = activeTab
+            .querySelector('textarea + .CodeMirror')) === null || _a === void 0 ? void 0 : _a['CodeMirror']) === null || _b === void 0 ? void 0 : _b.refresh(); });
     }
     runPlayground() {
         var _a, _b, _c, _d;
@@ -830,8 +827,7 @@ class CodePlaygroundElement extends HTMLElement {
             htmlContent = htmlEditor['CodeMirror'].getValue();
         }
         else {
-            htmlContent =
-                (_b = (_a = section.querySelector('textarea[data-language="html"]')) === null || _a === void 0 ? void 0 : _a.value) !== null && _b !== void 0 ? _b : '';
+            htmlContent = (_b = (_a = section.querySelector('textarea[data-language="html"]')) === null || _a === void 0 ? void 0 : _a.value) !== null && _b !== void 0 ? _b : '';
         }
         // If the HTML content contains any <script> tags, extract them
         const scriptTags = htmlContent.match(/<script.*>.*?<\/script>/g);
@@ -875,8 +871,7 @@ class CodePlaygroundElement extends HTMLElement {
             jsContent = jsEditor['CodeMirror'].getValue();
         }
         else {
-            jsContent =
-                (_d = (_c = section.querySelector('textarea[data-language="javascript"]')) === null || _c === void 0 ? void 0 : _c.value) !== null && _d !== void 0 ? _d : '';
+            jsContent = (_d = (_c = section.querySelector('textarea[data-language="javascript"]')) === null || _c === void 0 ? void 0 : _c.value) !== null && _d !== void 0 ? _d : '';
         }
         const newScript = document.createElement('script');
         newScript.type = 'module';

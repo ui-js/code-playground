@@ -74,7 +74,7 @@ in a 'sandbox':
 <code-playground>
   <script>
     moduleMap = {
-      mathlive: "//unpkg.com/mathlive/dist/mathlive.mjs",
+      mathlive: "//unpkg.com/mathlive/dist/mathlive.min.mjs",
     };
   </script></code-playground>
   <div slot="javascript">import MathLive from 'mathlive';</div>
@@ -82,7 +82,7 @@ in a 'sandbox':
 ```
 
 will result in the `'mathlive'` module to be loaded from the
-`'//unpkg.com/mathlive/dist/mathlive.mjs'` URL;
+`'//unpkg.com/mathlive/dist/mathlive.min.mjs'` URL;
 
 # Attributes and Properties
 
