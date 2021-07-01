@@ -19,7 +19,7 @@
   "files": [
     "/dist"
   ],
-  "main": "./dist/code-playground.js",
+  "main": "./dist/code-playground.min.js",
   "author": "arno@arno.org",
   "license": "MIT",
   "bugs": {

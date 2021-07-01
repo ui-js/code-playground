@@ -6,7 +6,7 @@ section in a web page.
 To use it, add a script tag pointing to the code for the component:
 
 ```html
-<script type="module" src="../dist/code-playground.js"></script>
+<script type="module" src="../dist/code-playground.min.js"></script>
 ```
 
 Then add a `<code-playground>` tag in your page:
