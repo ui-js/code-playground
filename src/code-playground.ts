@@ -28,7 +28,7 @@ const DEFAULT_AUTORUN_DELAY = 1000;
 
 const TEMPLATE = document.createElement('template');
 TEMPLATE.innerHTML = `
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/codemirror.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
 <style>
   :host {
     display: block;
@@ -719,9 +719,8 @@ export class CodePlaygroundElement extends HTMLElement {
   }
 
   connectedCallback(): void {
-    const styleSlot = this.shadowRoot.querySelector<HTMLSlotElement>(
-      'slot[name=style]'
-    );
+    const styleSlot =
+      this.shadowRoot.querySelector<HTMLSlotElement>('slot[name=style]');
     if (styleSlot) {
       const styleContent = styleSlot
         .assignedNodes()
@@ -872,9 +871,8 @@ export class CodePlaygroundElement extends HTMLElement {
 
     if (!activeTab) return;
 
-    activeTab.querySelector<HTMLInputElement>(
-      'input[type="radio"]'
-    ).checked = true;
+    activeTab.querySelector<HTMLInputElement>('input[type="radio"]').checked =
+      true;
 
     this.shadowRoot
       .querySelector<HTMLElement>('.tabs')
@@ -1001,9 +999,8 @@ export class CodePlaygroundElement extends HTMLElement {
   }
 
   editorContentChanged(): void {
-    this.shadowRoot.querySelector<HTMLButtonElement>(
-      '#reset-button'
-    ).disabled = false;
+    this.shadowRoot.querySelector<HTMLButtonElement>('#reset-button').disabled =
+      false;
     if (this.buttonBarVisibility === 'auto') {
       this.shadowRoot.querySelector('.buttons').classList.add('visible');
       const tabs = this.shadowRoot.querySelectorAll<HTMLElement>('.tab');

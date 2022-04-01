@@ -25,7 +25,7 @@ const TAB_WIDTH = 150;
 const DEFAULT_AUTORUN_DELAY = 1000;
 const TEMPLATE = document.createElement('template');
 TEMPLATE.innerHTML = `
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/codemirror.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
 <style>
   :host {
     display: block;
@@ -798,7 +798,8 @@ class CodePlaygroundElement extends HTMLElement {
         const activeTab = (_a = this.shadowRoot.querySelector(`[data-name=${name}]`)) !== null && _a !== void 0 ? _a : this.shadowRoot.querySelectorAll('.tab')[0];
         if (!activeTab)
             return;
-        activeTab.querySelector('input[type="radio"]').checked = true;
+        activeTab.querySelector('input[type="radio"]').checked =
+            true;
         this.shadowRoot
             .querySelector('.tabs')
             .style.setProperty('--tab-indicator-offset', activeTab.offsetLeft -
@@ -911,7 +912,8 @@ class CodePlaygroundElement extends HTMLElement {
         }, 500);
     }
     editorContentChanged() {
-        this.shadowRoot.querySelector('#reset-button').disabled = false;
+        this.shadowRoot.querySelector('#reset-button').disabled =
+            false;
         if (this.buttonBarVisibility === 'auto') {
             this.shadowRoot.querySelector('.buttons').classList.add('visible');
             const tabs = this.shadowRoot.querySelectorAll('.tab');

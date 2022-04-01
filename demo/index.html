@@ -20,7 +20,7 @@
         <div slot="preamble"><script>console.log('in preamble');</script></div>
         <script>
             moduleMap = {
-                mathlive: "//unpkg.com/mathlive/dist/mathlive.min.mjs",
+                mathlive: "//unpkg.com/mathlive?module",
             };
         </script>
         <!-- <div slot="javascript">import MathLive from 'mathlive';
@@ -33,12 +33,12 @@ const mf = MathLive.makeMathField(document.getElementById('mathfield'),
 });
 console.log(mf.config);
 </div> -->
-        <div slot="html">&lt;script src="//unpkg.com/mathlive/dist/mathlive.min.js"&gt;&lt;/script&gt;
-&lt;script&gt;console.log("Hello world");&lt;/script&gt;
+        <div slot="html">&lt;script src="//unpkg.com/mathlive"&gt;&lt;/script&gt;
+&lt;script&gt;console.log('Hello world')&lt;/script&gt;
 &lt;math-field id="mathfield"&gt;
     x=\frac{-b\pm \sqrt{b^2-4ac}}{2a}
 &lt;/math-field&gt;&lt;div class="zebra-zone"&gt;Hello There &lt;/div&gt;</div>
-<div slot="javascript">console.log(document.querySelector('div'))</div>
+<div slot="javascript"></div>
     </code-playground>
 
 <!--     
@@ -73,9 +73,9 @@ MathLive.makeMathField(document.getElementById('mathfield'));
     </code-playground> -->
 
     <script type="module" src="../build/code-playground.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/codemirror.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/mode/javascript/javascript.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/mode/xml/xml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/xml/xml.min.js"></script>
 </body>
 
 </html>
