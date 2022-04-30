@@ -830,20 +830,19 @@ export class CodePlaygroundElement extends HTMLElement {
 
           const lang = {
             javascript: 'javascript',
+            json: { name: 'javascript', json: true },
             css: 'css',
-            html: 'xml',
-          }[x.dataset.language ?? 'javascript'];
+            html: { name: 'xml', htmlMode: true },
+          }[x.dataset.language];
 
           const editor = CodeMirror.fromTextArea(x, {
             lineNumbers: this.showLineNumbers,
             lineWrapping: true,
-            mode: lang,
+            mode: lang ?? 'javascript',
             theme: 'tomorrow-night',
           });
           editor.setSize('100%', '100%');
-          editor.on('change', () => {
-            this.editorContentChanged();
-          });
+          editor.on('change', () => this.editorContentChanged());
         });
     }
 
@@ -1032,7 +1031,7 @@ export class CodePlaygroundElement extends HTMLElement {
         .join('');
       if (text) {
         const editor = this.shadowRoot.querySelector(
-          'textarea[data-language="' + slot.name + '"] + .CodeMirror'
+          `textarea[data-language="${slot.name}"] + .CodeMirror`
         );
         editor['CodeMirror'].setValue(text);
       }

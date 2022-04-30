@@ -760,7 +760,6 @@ class CodePlaygroundElement extends HTMLElement {
             shadowRoot
                 .querySelectorAll('.tab .content textarea')
                 .forEach((x) => {
-                var _a;
                 // Remove XML comments, including the <!-- htmlmin:ignore --> used to
                 // indicate to terser to skip sections, so as to preserve the formatting.
                 x.value = x.value.replace(/<!--.*-->\n?/g, '');
@@ -768,19 +767,18 @@ class CodePlaygroundElement extends HTMLElement {
                 this.resizeObserver.observe(x.parentElement);
                 const lang = {
                     javascript: 'javascript',
+                    json: { name: 'javascript', json: true },
                     css: 'css',
-                    html: 'xml',
-                }[(_a = x.dataset.language) !== null && _a !== void 0 ? _a : 'javascript'];
+                    html: { name: 'xml', htmlMode: true },
+                }[x.dataset.language];
                 const editor = CodeMirror.fromTextArea(x, {
                     lineNumbers: this.showLineNumbers,
                     lineWrapping: true,
-                    mode: lang,
+                    mode: lang !== null && lang !== void 0 ? lang : 'javascript',
                     theme: 'tomorrow-night',
                 });
                 editor.setSize('100%', '100%');
-                editor.on('change', () => {
-                    this.editorContentChanged();
-                });
+                editor.on('change', () => this.editorContentChanged());
             });
         }
         // 5. Activate the previously active tab, or the first one
@@ -943,7 +941,7 @@ class CodePlaygroundElement extends HTMLElement {
                 .map((node) => node.innerText)
                 .join('');
             if (text) {
-                const editor = this.shadowRoot.querySelector('textarea[data-language="' + slot.name + '"] + .CodeMirror');
+                const editor = this.shadowRoot.querySelector(`textarea[data-language="${slot.name}"] + .CodeMirror`);
                 editor['CodeMirror'].setValue(text);
             }
         });
