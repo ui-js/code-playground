@@ -82,8 +82,8 @@ The Javascript source code is modified before execution to be executable in a
 </code-playground>
 ```
 
-will result in the `'mathlive'` module to be loaded from the
-`'//unpkg.com/mathlive/dist/mathlive.min.mjs'` URL;
+will result in the `"mathlive"` module to be loaded from the
+`"//unpkg.com/mathlive/dist/mathlive.min.mjs"` URL;
 
 # Attributes and Properties
 
