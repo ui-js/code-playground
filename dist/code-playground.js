@@ -1108,8 +1108,9 @@ const INDENT = '  ';
  * Convert a basic type or an object into a HTML string
  */
 function asString(depth, value, options = {}) {
-    var _a;
+    var _a, _b;
     (_a = options.quote) !== null && _a !== void 0 ? _a : (options.quote = '"');
+    (_b = options.ancestors) !== null && _b !== void 0 ? _b : (options.ancestors = []);
     //
     // BOOLEAN
     //
@@ -1254,12 +1255,20 @@ function asString(depth, value, options = {}) {
     // OBJECT
     //
     if (typeof value === 'object') {
-        const props = Object.keys(value);
+        if (options.ancestors.includes(value))
+            return {
+                text: '<span class="sep">{...}</span>',
+                itemCount: 1,
+                lineCount: 1,
+            };
+        options.ancestors.push(value);
+        let props = Object.keys(value);
         Object.getOwnPropertyNames(value).forEach((prop) => {
             if (!props.includes(prop)) {
                 props.push(prop);
             }
         });
+        props = props.filter(x => !x.startsWith('_'));
         if (props.length === 0 && typeof props.toString === 'function') {
             const result = value.toString();
             if (result === '[object Object]')
@@ -1276,7 +1285,7 @@ function asString(depth, value, options = {}) {
         }
         const propStrings = props.sort().map((key) => {
             if (typeof value[key] === 'object' && value[key] !== null) {
-                let result = asString(depth + 1, value[key]);
+                let result = asString(depth + 1, value[key], { ancestors: options.ancestors });
                 if (result.itemCount > 500) {
                     result = {
                         text: "<span class='sep'>(...)</span>",
@@ -1297,7 +1306,7 @@ function asString(depth, value, options = {}) {
                     lineCount: 1,
                 };
             }
-            const result = asString(depth + 1, value[key]);
+            const result = asString(depth + 1, value[key], { ancestors: options.ancestors });
             return {
                 text: `<span class="property">${key}</span></span><span class='sep'>: </span>${result.text}`,
                 itemCount: result.itemCount,

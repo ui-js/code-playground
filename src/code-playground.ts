@@ -1241,9 +1241,10 @@ const INDENT = '  ';
 function asString(
   depth: number,
   value: unknown,
-  options: { quote?: string } = {}
+  options: { quote?: string , ancestors?: Record<any, any>[]} = {}
 ): { text: string; itemCount: number; lineCount: number } {
   options.quote ??= '"';
+  options.ancestors ??= [];
 
   //
   // BOOLEAN
@@ -1401,13 +1402,22 @@ function asString(
   // OBJECT
   //
   if (typeof value === 'object') {
-    const props = Object.keys(value);
+    if (options.ancestors.includes(value)) return {
+      text: '<span class="sep">{...}</span>',
+      itemCount: 1,
+      lineCount: 1,
+    };
+
+    options.ancestors.push(value);
+    
+    let props = Object.keys(value);
 
     Object.getOwnPropertyNames(value).forEach((prop) => {
       if (!props.includes(prop)) {
         props.push(prop);
       }
     });
+    props = props.filter(x => !x.startsWith('_'));
     if (props.length === 0 && typeof props.toString === 'function') {
       const result = value.toString();
       if (result === '[object Object]')
@@ -1425,7 +1435,7 @@ function asString(
 
     const propStrings = props.sort().map((key) => {
       if (typeof value[key] === 'object' && value[key] !== null) {
-        let result = asString(depth + 1, value[key]);
+        let result = asString(depth + 1, value[key], {ancestors: options.ancestors});
         if (result.itemCount > 500) {
           result = {
             text: "<span class='sep'>(...)</span>",
@@ -1446,7 +1456,7 @@ function asString(
           lineCount: 1,
         };
       }
-      const result = asString(depth + 1, value[key]);
+      const result = asString(depth + 1, value[key], {ancestors: options.ancestors});
       return {
         text: `<span class="property">${key}</span></span><span class='sep'>: </span>${result.text}`,
         itemCount: result.itemCount,
