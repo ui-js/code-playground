@@ -8,7 +8,7 @@ const base05 = '#c5c8c6'; // base05
 // const base06 = "#e0e0e0";
 // const base07 = "#ffffff";
 const base0c = '#cc6666'; // base08
-const base09 = '#de935f';
+const base09 = '#ec9c65';
 const base0a = '#f0c674';
 const base0b = '#b5bd68';
 const base08 = '#8abeb7'; // base0c
@@ -97,10 +97,16 @@ TEMPLATE.innerHTML = `
     width: calc(50% - .5em);
     margin-left: .5em;
   }
+  div.result > div.output {
+    display: none;
+  }
   .output {
     border-radius: 8px;
     padding: 8px;
     border: var(--ui-border, 1px solid rgba(0, 0, 0, .2));
+  }
+  div.result > div.output.visible {
+    display:  block;
   }
   .output textarea {
     width: calc(100% - 16px);
@@ -120,9 +126,10 @@ TEMPLATE.innerHTML = `
   .stack-layout [type=radio]:checked ~ label {
     color: #666;
   }
-  .console {
+  div.result > pre.console {
+    display: none;
     max-height: 50vh;
-    padding: 8px;
+    padding: 8px 8px 8px 1em;
     border-radius: 8px;
     overflow: auto;
     font-size: 1em;
@@ -130,6 +137,9 @@ TEMPLATE.innerHTML = `
     background: var(--base-00, ${base00});
     white-space: pre-wrap;
     border: var(--ui-border, 1px solid rgba(0, 0, 0, .2));
+  }
+  div.result > pre.console.visible {
+    display: block;
   }
   .console .sep {
     color: var(--base-05, ${base05});
@@ -183,6 +193,9 @@ TEMPLATE.innerHTML = `
   .console .warning {
     color: var(--semantic-orange, ${YELLOW});
   }
+  .console .log {
+    color: var(--blue--200);
+  }
   .console .group {
     font-weight: bold;
   }
@@ -231,7 +244,7 @@ TEMPLATE.innerHTML = `
     top: auto;
     left: auto;
     bottom: auto;
-    padding-left: 1em;
+    padding: 8px 8px 8px 1em;
     background: var(--base-00, ${base00});
     overflow: hidden;
   }
@@ -556,39 +569,39 @@ TEMPLATE.innerHTML = `
 
 const CONSOLE_MAX_LINES = 1000;
 
-declare class ResizeObserver {
-  constructor(callback: ResizeObserverCallback);
-  observe: (target: Element, options?: ResizeObserverOptions) => void;
-  unobserve: (target: Element) => void;
-  disconnect: () => void;
-}
+// declare class ResizeObserver {
+//   constructor(callback: ResizeObserverCallback);
+//   observe: (target: Element, options?: ResizeObserverOptions) => void;
+//   unobserve: (target: Element) => void;
+//   disconnect: () => void;
+// }
 
-type ResizeObserverBoxOptions =
-  | 'border-box'
-  | 'content-box'
-  | 'device-pixel-content-box';
+// type ResizeObserverBoxOptions =
+//   | 'border-box'
+//   | 'content-box'
+//   | 'device-pixel-content-box';
 
-interface ResizeObserverOptions {
-  box?: ResizeObserverBoxOptions;
-}
+// interface ResizeObserverOptions {
+//   box?: ResizeObserverBoxOptions;
+// }
 
-type ResizeObserverCallback = (
-  entries: ResizeObserverEntry[],
-  observer: ResizeObserver
-) => void;
+// type ResizeObserverCallback = (
+//   entries: ResizeObserverEntry[],
+//   observer: ResizeObserver
+// ) => void;
 
-interface ResizeObserverEntry {
-  readonly target: Element;
-  readonly contentRect: DOMRectReadOnly;
-  readonly borderBoxSize: ResizeObserverSize[];
-  readonly contentBoxSize: ResizeObserverSize[];
-  readonly devicePixelContentBoxSize: ResizeObserverSize[];
-}
+// interface ResizeObserverEntry {
+//   readonly target: Element;
+//   readonly contentRect: DOMRectReadOnly;
+//   readonly borderBoxSize: ResizeObserverSize[];
+//   readonly contentBoxSize: ResizeObserverSize[];
+//   readonly devicePixelContentBoxSize: ResizeObserverSize[];
+// }
 
-interface ResizeObserverSize {
-  readonly inlineSize: number;
-  readonly blockSize: number;
-}
+// interface ResizeObserverSize {
+//   readonly inlineSize: number;
+//   readonly blockSize: number;
+// }
 
 export class CodePlaygroundElement extends HTMLElement {
   private dirty = false;
@@ -656,9 +669,8 @@ export class CodePlaygroundElement extends HTMLElement {
   }
   constructor() {
     super();
-    if (!this.id) {
-      this.id = randomId();
-    }
+    if (!this.id) this.id = randomId();
+
     this.moduleMap = window['moduleMap'] ?? {};
     this.attachShadow({ mode: 'open' });
     this.shadowRoot.appendChild(TEMPLATE.content.cloneNode(true));
@@ -823,7 +835,13 @@ export class CodePlaygroundElement extends HTMLElement {
         .forEach((x: HTMLTextAreaElement) => {
           // Remove XML comments, including the <!-- htmlmin:ignore --> used to
           // indicate to terser to skip sections, so as to preserve the formatting.
-          x.value = x.value.replace(/<!--.*-->\n?/g, '');
+          let value = x.value.replace(/<!--.*-->\n?/g, '');
+
+          // Remove lines with only a `//`
+          value = value
+            .split('\n')
+            .map((x) => (x.trim() === '//' ? '' : x))
+            .join('\n');
 
           // Watch for re-layout and invoke CodeMirror refresh when they happen
           this.resizeObserver.observe(x.parentElement);
@@ -841,6 +859,7 @@ export class CodePlaygroundElement extends HTMLElement {
             mode: lang ?? 'javascript',
             theme: 'tomorrow-night',
           });
+          editor.setValue(value);
           editor.setSize('100%', '100%');
           editor.on('change', () => this.editorContentChanged());
         });
@@ -894,14 +913,14 @@ export class CodePlaygroundElement extends HTMLElement {
     const result = section.querySelector('.result');
 
     // Remove all the script tags that might be there.
-    result.querySelectorAll('.result > script').forEach((x) => {
-      result.removeChild(x);
-    });
+    result
+      .querySelectorAll('.result > script')
+      .forEach((x) => result.removeChild(x));
 
     // Remove all the consoles that might be there.
-    result.querySelectorAll('.result > .console').forEach((x) => {
-      result.removeChild(x);
-    });
+    // result
+    //   .querySelectorAll('.result > .console')
+    //   .forEach((x) => result.removeChild(x));
 
     // Setup the HTML in 'output'
     let htmlContent = '';
@@ -948,7 +967,10 @@ export class CodePlaygroundElement extends HTMLElement {
             `<link rel="stylesheet" href="${href}"></link>` + htmlContent;
         }
       });
-      section.querySelector('.output').innerHTML = htmlContent;
+      const outputElement = section.querySelector('div.result > div.output');
+      if (htmlContent) outputElement.classList.add('visible');
+      else outputElement.classList.remove('visible');
+      outputElement.innerHTML = htmlContent;
     } catch (e) {
       // If there's a syntax error in the markup, catch it here
       this.pseudoConsole().error(e.message);
@@ -969,6 +991,7 @@ export class CodePlaygroundElement extends HTMLElement {
     }
     const newScript = document.createElement('script');
     newScript.type = 'module';
+    this.pseudoConsole().clear();
     try {
       newScript.textContent = this.processLiveCodeJavascript(jsContent);
       result.appendChild(newScript);
@@ -1025,7 +1048,7 @@ export class CodePlaygroundElement extends HTMLElement {
   resetPlayground(): void {
     const slots = this.shadowRoot.querySelectorAll('.original-content slot');
     slots.forEach((slot: HTMLSlotElement) => {
-      const text = slot
+      let text = slot
         .assignedNodes()
         .map((node: HTMLElement) => node.innerText)
         .join('');
@@ -1044,33 +1067,33 @@ export class CodePlaygroundElement extends HTMLElement {
   } {
     const shadowRoot = this.shadowRoot;
     // root ?? (document.currentScript.getRootNode() as HTMLElement);
-    let console: HTMLElement = shadowRoot.querySelector('.result .console');
+    let console = shadowRoot.querySelector<HTMLElement>('.result .console');
     if (!console) {
       console = document.createElement('pre');
       console.classList.add('console');
       shadowRoot.querySelector('.result').appendChild(console);
     }
-    const appendConsole = function (msg: string) {
-      // @todo: support string substition (i.e. %s, %c, etc..)
-
+    const appendConsole = (msg: string) => {
       let lines = console.innerHTML.split('\n');
-      if (lines.length > CONSOLE_MAX_LINES) {
+      if (lines.length > CONSOLE_MAX_LINES)
         lines = lines.slice(lines.length - CONSOLE_MAX_LINES + 1);
-      }
+
       console.innerHTML =
         lines.join('\n') +
         '&nbsp;&nbsp;'.repeat(parseInt(console.dataset['group-level']) ?? 0) +
         msg +
         '\n';
       console.scrollTop = console.scrollHeight;
+
+      console.classList.add('visible');
     };
     return {
       ...window.console,
-      assert: function (condition: boolean, ...args) {
+      assert: (condition: boolean, ...args) => {
         if (!condition) appendConsole(interpolate(args));
       },
       // non-standard
-      catch: function (err) {
+      catch: (err) => {
         const m =
           err.stack
             .split('at ')
@@ -1078,51 +1101,44 @@ export class CodePlaygroundElement extends HTMLElement {
             .match(/:([0-9]+):([0-9]+)$/) || [];
         appendConsole(
           '<span class="error">' +
-            (m[1] ? 'Line ' + (parseInt(m[1]) - 1) + ': ' : '') +
+            (m[1] ? 'Line ' + (parseInt(m[1]) - 2) + ': ' : '') +
             err.message +
             '</span>'
         );
       },
-      clear: function () {
+      clear: () => {
         console.innerHTML = '';
+        console.classList.remove('visible');
       },
-      debug: function (...args) {
-        appendConsole(interpolate(args));
-      },
-      dir: function (...args) {
-        appendConsole(interpolate(args));
-      },
-      error: function (...args) {
-        appendConsole('<span class="error">' + interpolate(args) + '</span>');
-      },
-      group: function (...args) {
+      debug: (...args) => appendConsole(interpolate(args)),
+      dir: (...args) => appendConsole(interpolate(args)),
+      error: (...args) =>
+        appendConsole('<span class="error">' + interpolate(args) + '</span>'),
+      group: (...args) => {
         if (arguments.length > 0)
           appendConsole('<span class="group">' + interpolate(args) + '</span>');
         console.dataset['group-level'] = Number(
           (parseInt(console.dataset['group-level']) ?? 0) + 1
         ).toString();
       },
-      groupCollapsed: function (...args) {
+      groupCollapsed: (...args) => {
         if (arguments.length > 0)
           appendConsole('<span class="group">' + interpolate(args) + '</span>');
         console.dataset['group-level'] = Number(
           (parseInt(console.dataset['group-level']) ?? 0) + 1
         ).toString();
       },
-      groupEnd: function () {
+      groupEnd: () => {
         console.dataset['group-level'] = Number(
           (parseInt(console.dataset['group-level']) ?? 0) - 1
         ).toString();
       },
-      info: function (...args) {
-        appendConsole(interpolate(args));
-      },
-      log: function (...args) {
-        appendConsole(interpolate(args));
-      },
-      warn: function (...args) {
-        appendConsole('<span class="warning">' + interpolate(args) + '</span>');
-      },
+      info: (...args) =>
+        appendConsole(`<span class="info">${interpolate(args)}</span>`),
+      log: (...args) =>
+        appendConsole(`<span class="log">${interpolate(args)}</span>`),
+      warn: (...args) =>
+        appendConsole(`<span class="warning">${interpolate(args)}</span>`),
     };
   }
 
@@ -1172,16 +1188,14 @@ export class CodePlaygroundElement extends HTMLElement {
     return (
       imports
         .map((x) => {
-          if (this.moduleMap[x[2]]) {
-            return x[1] + '"' + this.moduleMap[x[2]] + '";';
-          }
+          if (this.moduleMap[x[2]]) return `${x[1]} "${this.moduleMap[x[2]]}";`;
           return x[0];
         })
         .join('\n') +
       `const playground${jsID} = document.getElementById("${this.id}").shadowRoot;` +
       `const console${jsID} = playground${jsID}.host.pseudoConsole();` +
-      `const output${jsID} = playground${jsID}.querySelector("div.output");` +
-      'try{(async function() {\n' +
+      `const output${jsID} = playground${jsID}.querySelector("div.result > div.output");` +
+      'try{(function() {\n' +
       script +
       `\n}());} catch(err) { console${jsID}.catch(err) }`
     );
@@ -1241,7 +1255,7 @@ const INDENT = '  ';
 function asString(
   depth: number,
   value: unknown,
-  options: { quote?: string , ancestors?: Record<any, any>[]} = {}
+  options: { quote?: string; ancestors?: Record<any, any>[] } = {}
 ): { text: string; itemCount: number; lineCount: number } {
   options.quote ??= '"';
   options.ancestors ??= [];
@@ -1256,6 +1270,7 @@ function asString(
       lineCount: 1,
     };
   }
+
   //
   // NUMBER
   //
@@ -1285,16 +1300,15 @@ function asString(
       lineCount: value.split(/\r\n|\r|\n/).length,
     };
   }
+
   //
   // FUNCTION
   //
   if (typeof value === 'function') {
     let functionValue = '';
-    if (value.hasOwnProperty('toString')) {
-      functionValue = escapeHTML(value.toString());
-    } else {
-      functionValue = escapeHTML(String(value));
-    }
+    if ('toString' in value) functionValue = escapeHTML(value.toString());
+    else functionValue = escapeHTML(String(value));
+
     return {
       text: `<span class="function">ƒ  ${functionValue}</span>`,
       itemCount: 1,
@@ -1303,9 +1317,9 @@ function asString(
   }
 
   //
-  // NULL
+  // NULL/UNDEFINED
   //
-  if (value === null) {
+  if (value === null || value === undefined) {
     return {
       text: `<span class="null">${escapeHTML(String(value))}</span>`,
       itemCount: 1,
@@ -1326,11 +1340,22 @@ function asString(
   // ARRAY
   //
   if (Array.isArray(value)) {
+    if (options.ancestors.includes(value))
+      return {
+        text: '<span class="sep">[...]</span>',
+        itemCount: 1,
+        lineCount: 1,
+      };
+
     const result = [];
     // To account for sparse array, we can't use map() (it skips over empty slots)
     for (let i = 0; i < value.length; i++) {
       if (Object.keys(value).includes(Number(i).toString())) {
-        result.push(asString(depth + 1, value[i]));
+        result.push(
+          asString(depth + 1, value[i], {
+            ancestors: [...options.ancestors, value],
+          })
+        );
       } else {
         result.push({
           text: '<span class="empty">empty</span>',
@@ -1373,6 +1398,13 @@ function asString(
   // HTMLElement
   //
   if (value instanceof Element) {
+    if (options.ancestors.includes(value))
+      return {
+        text: '<span class="object">Element...</span>',
+        itemCount: 1,
+        lineCount: 1,
+      };
+
     let result = `<${value.localName}`;
     let lineCount = 1;
     Array.from(value.attributes).forEach((x) => {
@@ -1402,14 +1434,37 @@ function asString(
   // OBJECT
   //
   if (typeof value === 'object') {
-    if (options.ancestors.includes(value)) return {
-      text: '<span class="sep">{...}</span>',
-      itemCount: 1,
-      lineCount: 1,
-    };
+    if (options.ancestors.includes(value))
+      return {
+        text: '<span class="sep">{...}</span>',
+        itemCount: 1,
+        lineCount: 1,
+      };
 
-    options.ancestors.push(value);
-    
+    if (value instanceof Map) {
+      const kv = Object.fromEntries(value);
+      const result = asString(depth, kv, {
+        ancestors: [...options.ancestors, value],
+      });
+      return { ...result, text: '<span class=object>Map</span>' + result.text };
+    }
+    if (value instanceof Set) {
+      const elts = Array.from(value);
+      const result = asString(depth, elts, {
+        ancestors: [...options.ancestors, value],
+      });
+      return { ...result, text: '<span class=object>Set</span>' + result.text };
+    }
+
+    if ('toString' in value) {
+      const s = value.toString();
+      if (s !== '[object Object]')
+        return {
+          text: escapeHTML(s),
+          itemCount: 1,
+          lineCount: 1,
+        };
+    }
     let props = Object.keys(value);
 
     Object.getOwnPropertyNames(value).forEach((prop) => {
@@ -1417,7 +1472,7 @@ function asString(
         props.push(prop);
       }
     });
-    props = props.filter(x => !x.startsWith('_'));
+    props = props.filter((x) => !x.startsWith('_'));
     if (props.length === 0 && typeof props.toString === 'function') {
       const result = value.toString();
       if (result === '[object Object]')
@@ -1435,7 +1490,9 @@ function asString(
 
     const propStrings = props.sort().map((key) => {
       if (typeof value[key] === 'object' && value[key] !== null) {
-        let result = asString(depth + 1, value[key], {ancestors: options.ancestors});
+        let result = asString(depth + 1, value[key], {
+          ancestors: [...options.ancestors, value],
+        });
         if (result.itemCount > 500) {
           result = {
             text: "<span class='sep'>(...)</span>",
@@ -1456,7 +1513,9 @@ function asString(
           lineCount: 1,
         };
       }
-      const result = asString(depth + 1, value[key], {ancestors: options.ancestors});
+      const result = asString(depth + 1, value[key], {
+        ancestors: [...options.ancestors, value],
+      });
       return {
         text: `<span class="property">${key}</span></span><span class='sep'>: </span>${result.text}`,
         itemCount: result.itemCount,
