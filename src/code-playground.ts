@@ -790,7 +790,7 @@ export class CodePlaygroundElement extends HTMLElement {
         content += `<div class='tab' id="${tabId}" data-name="${language}">
         <input type="radio" id="${tabId}" name="${this.id}">
         <label for="${tabId}">${language}</label>
-        <div class="content ${language.toLowerCase()}">
+        <div part="editor" class="content ${language.toLowerCase()}">
             <textarea data-language="${language.toLowerCase()}">${text}</textarea> 
         </div>
     </div>`;
@@ -1048,7 +1048,7 @@ export class CodePlaygroundElement extends HTMLElement {
   resetPlayground(): void {
     const slots = this.shadowRoot.querySelectorAll('.original-content slot');
     slots.forEach((slot: HTMLSlotElement) => {
-      let text = slot
+      const text = slot
         .assignedNodes()
         .map((node: HTMLElement) => node.innerText)
         .join('');
@@ -1255,7 +1255,7 @@ const INDENT = '  ';
 function asString(
   depth: number,
   value: unknown,
-  options: { quote?: string; ancestors?: Record<any, any>[] } = {}
+  options: { quote?: string; ancestors?: Record<string, any>[] } = {}
 ): { text: string; itemCount: number; lineCount: number } {
   options.quote ??= '"';
   options.ancestors ??= [];

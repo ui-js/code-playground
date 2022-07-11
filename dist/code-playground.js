@@ -760,7 +760,7 @@ class CodePlaygroundElement extends HTMLElement {
                 content += `<div class='tab' id="${tabId}" data-name="${language}">
         <input type="radio" id="${tabId}" name="${this.id}">
         <label for="${tabId}">${language}</label>
-        <div class="content ${language.toLowerCase()}">
+        <div part="editor" class="content ${language.toLowerCase()}">
             <textarea data-language="${language.toLowerCase()}">${text}</textarea> 
         </div>
     </div>`;
@@ -988,7 +988,7 @@ class CodePlaygroundElement extends HTMLElement {
     resetPlayground() {
         const slots = this.shadowRoot.querySelectorAll('.original-content slot');
         slots.forEach((slot) => {
-            let text = slot
+            const text = slot
                 .assignedNodes()
                 .map((node) => node.innerText)
                 .join('');
