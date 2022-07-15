@@ -132,6 +132,7 @@ TEMPLATE.innerHTML = `
     padding: 8px 8px 8px 1em;
     border-radius: 8px;
     overflow: auto;
+    font-family: var(--monospace-font,'JetBrains Mono', 'IBM Plex Mono', 'Fira Code', 'Source Code Pro', monospace);
     font-size: 1em;
     color: var(--base-05, ${base05});
     background: var(--base-00, ${base00});
@@ -541,7 +542,7 @@ TEMPLATE.innerHTML = `
   .cm-s-tomorrow-night .CodeMirror-gutters { background: var(--base-00, ${base00}); border-right: 0px; }
   .cm-s-tomorrow-night .CodeMirror-guttermarker { color: var(--base-0c, ${base0c}); }
   .cm-s-tomorrow-night .CodeMirror-guttermarker-subtle { color: var(--base-03, ${base03}); }
-  .cm-s-tomorrow-night .CodeMirror-linenumber { color: var(--base-04, ${base04}); opacity: .4; }
+  .cm-s-tomorrow-night .CodeMirror-linenumber { color: var(--base-04, ${base04}); opacity: .7; }
   .cm-s-tomorrow-night .CodeMirror-cursor { border-left: 1px solid ${base0d}; }
   
   .cm-s-tomorrow-night span.cm-comment { color: var(--base-09, ${base09}); }
@@ -563,45 +564,19 @@ TEMPLATE.innerHTML = `
   .cm-s-tomorrow-night .CodeMirror-activeline-background { background: var(--base-02, ${base02}); }
   .cm-s-tomorrow-night .CodeMirror-matchingbracket { text-decoration: underline; color: white !important; }    
 
+  
+  .CodeMirror .marked div.CodeMirror-linenumber {
+    opacity: 1;
+    color: var(--base-07, #fff);
+  }
+  .CodeMirror .marked pre.CodeMirror-line {
+    background: var(--editor-marked-line, var(--blue-700, #0c6abe)) !important;
+  }
 </style>
 <slot name="style"></slot><slot name="preamble"></slot>
 `;
 
 const CONSOLE_MAX_LINES = 1000;
-
-// declare class ResizeObserver {
-//   constructor(callback: ResizeObserverCallback);
-//   observe: (target: Element, options?: ResizeObserverOptions) => void;
-//   unobserve: (target: Element) => void;
-//   disconnect: () => void;
-// }
-
-// type ResizeObserverBoxOptions =
-//   | 'border-box'
-//   | 'content-box'
-//   | 'device-pixel-content-box';
-
-// interface ResizeObserverOptions {
-//   box?: ResizeObserverBoxOptions;
-// }
-
-// type ResizeObserverCallback = (
-//   entries: ResizeObserverEntry[],
-//   observer: ResizeObserver
-// ) => void;
-
-// interface ResizeObserverEntry {
-//   readonly target: Element;
-//   readonly contentRect: DOMRectReadOnly;
-//   readonly borderBoxSize: ResizeObserverSize[];
-//   readonly contentBoxSize: ResizeObserverSize[];
-//   readonly devicePixelContentBoxSize: ResizeObserverSize[];
-// }
-
-// interface ResizeObserverSize {
-//   readonly inlineSize: number;
-//   readonly blockSize: number;
-// }
 
 export class CodePlaygroundElement extends HTMLElement {
   private dirty = false;
@@ -609,6 +584,8 @@ export class CodePlaygroundElement extends HTMLElement {
   private moduleMap: { [module: string]: string };
   private resizeObserver: ResizeObserver;
   private runTimer: number;
+  private consoleUpdateTimer: number;
+  private consoleContent: string; // Pending content not yet displayed in the console.
 
   static get observedAttributes(): string[] {
     return [
@@ -650,16 +627,19 @@ export class CodePlaygroundElement extends HTMLElement {
     oldValue: string,
     newValue: string
   ): void {
-    if (name === 'active-tab' && oldValue !== newValue) {
+    if (oldValue === newValue) return;
+    if (name === 'active-tab') {
       this.activateTab(newValue);
-    } else if (name === 'layout' && oldValue !== newValue) {
+    } else if (name === 'layout') {
       this.shadowRoot
         .querySelector<HTMLElement>(':host > div')
         .classList.toggle('tab-layout', newValue !== 'stack');
       this.shadowRoot
         .querySelector<HTMLElement>(':host > div')
         .classList.toggle('stack-layout', newValue === 'stack');
-    } else if (name === 'show-line-numbers' && oldValue !== newValue) {
+    } else if (name === 'mark-line') {
+      mark(this.shadowRoot, newValue);
+    } else if (name === 'show-line-numbers') {
       this.shadowRoot
         .querySelectorAll('textarea + .CodeMirror')
         .forEach((x) =>
@@ -833,34 +813,28 @@ export class CodePlaygroundElement extends HTMLElement {
       shadowRoot
         .querySelectorAll<HTMLTextAreaElement>('.tab .content textarea')
         .forEach((x: HTMLTextAreaElement) => {
-          // Remove XML comments, including the <!-- htmlmin:ignore --> used to
-          // indicate to terser to skip sections, so as to preserve the formatting.
-          let value = x.value.replace(/<!--.*-->\n?/g, '');
-
-          // Remove lines with only a `//`
-          value = value
-            .split('\n')
-            .map((x) => (x.trim() === '//' ? '' : x))
-            .join('\n');
-
           // Watch for re-layout and invoke CodeMirror refresh when they happen
           this.resizeObserver.observe(x.parentElement);
 
-          const lang = {
-            javascript: 'javascript',
-            json: { name: 'javascript', json: true },
-            css: 'css',
-            html: { name: 'xml', htmlMode: true },
-          }[x.dataset.language];
+          const lang =
+            {
+              javascript: 'javascript',
+              json: { name: 'javascript', json: true },
+              css: 'css',
+              html: { name: 'xml', htmlMode: true },
+            }[x.dataset.language] ?? 'javascript';
 
           const editor = CodeMirror.fromTextArea(x, {
             lineNumbers: this.showLineNumbers,
             lineWrapping: true,
-            mode: lang ?? 'javascript',
+            mode: lang,
             theme: 'tomorrow-night',
           });
-          editor.setValue(value);
+          editor.setValue(sanitizeInput(x.value));
           editor.setSize('100%', '100%');
+          if (lang === 'javascript') {
+            if (this.markLine) mark(shadowRoot, this.markLine);
+          }
           editor.on('change', () => this.editorContentChanged());
         });
     }
@@ -1056,7 +1030,10 @@ export class CodePlaygroundElement extends HTMLElement {
         const editor = this.shadowRoot.querySelector(
           `textarea[data-language="${slot.name}"] + .CodeMirror`
         );
-        editor['CodeMirror'].setValue(text);
+        editor['CodeMirror'].setValue(sanitizeInput(text));
+        if (slot.name === 'javascript') {
+          if (this.markLine) mark(this.shadowRoot, this.markLine);
+        }
       }
     });
   }
@@ -1073,19 +1050,27 @@ export class CodePlaygroundElement extends HTMLElement {
       console.classList.add('console');
       shadowRoot.querySelector('.result').appendChild(console);
     }
+    const updateConsole = () => {
+      if (this.consoleUpdateTimer) clearTimeout(this.consoleUpdateTimer);
+      this.consoleUpdateTimer = setTimeout(() => {
+        console.innerHTML = this.consoleContent;
+        if (this.consoleContent) console.classList.add('visible');
+        else console.classList.remove('visible');
+        console.scrollTop = console.scrollHeight;
+      }, 100);
+    };
     const appendConsole = (msg: string) => {
-      let lines = console.innerHTML.split('\n');
+      let lines = this.consoleContent.split('\n');
       if (lines.length > CONSOLE_MAX_LINES)
         lines = lines.slice(lines.length - CONSOLE_MAX_LINES + 1);
 
-      console.innerHTML =
+      this.consoleContent =
         lines.join('\n') +
         '&nbsp;&nbsp;'.repeat(parseInt(console.dataset['group-level']) ?? 0) +
         msg +
         '\n';
-      console.scrollTop = console.scrollHeight;
 
-      console.classList.add('visible');
+      updateConsole();
     };
     return {
       ...window.console,
@@ -1107,8 +1092,8 @@ export class CodePlaygroundElement extends HTMLElement {
         );
       },
       clear: () => {
-        console.innerHTML = '';
-        console.classList.remove('visible');
+        this.consoleContent = '';
+        updateConsole();
       },
       debug: (...args) => appendConsole(interpolate(args)),
       dir: (...args) => appendConsole(interpolate(args)),
@@ -1229,6 +1214,14 @@ export class CodePlaygroundElement extends HTMLElement {
     } else {
       this.removeAttribute('show-line-numbers');
     }
+  }
+
+  get markLine(): string {
+    return this.getAttribute('mark-line');
+  }
+
+  set markLine(val: string) {
+    this.setAttribute('mark-line', val);
   }
 }
 
@@ -1611,6 +1604,53 @@ function escapeHTML(s: string): string {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
+}
+
+function sanitizeInput(s: string): string {
+  // Remove XML comments, including the <!-- htmlmin:ignore --> used to
+  // indicate to terser to skip sections, so as to preserve the formatting.
+
+  s = s.replace(/<!--.*-->\n?/g, '');
+
+  // Remove lines with only a `//`
+  s = s
+    .split('\n')
+    .map((x) => (x.trim() === '//' ? '' : x))
+    .join('\n');
+  return s;
+}
+
+function mark(root: ShadowRoot, arg: string | number | [number, number]) {
+  const jsEditor = root.querySelector(
+    'textarea[data-language="javascript"] + .CodeMirror'
+  )?.['CodeMirror'];
+
+  if (!jsEditor) return;
+
+  // jsEditor.doc.getAllMarks().forEach((marker) => marker.clear());
+  for (let i = jsEditor.doc.firstLine; i <= jsEditor.doc.lastLine; i++)
+    jsEditor.doc.removeLineClass(i, 'wrap', 'marked');
+
+  if (typeof arg === 'string' && /\d+-\d+/.test(arg)) {
+    const [, from, to] = arg.match(/(\d+)-(\d+)/);
+    for (let i = parseInt(from); i <= parseInt(to); i++)
+      jsEditor.doc.addLineClass(i - 1, 'wrap', 'marked');
+    return;
+  }
+
+  let value = arg;
+  try {
+    if (typeof arg === 'string' && arg.length > 0) value = JSON.parse(arg);
+  } catch (e) {}
+
+  if (value === '' || value === 'none') return;
+
+  if (typeof value === 'number') {
+    jsEditor.doc.addLineClass(value - 1, 'wrap', 'marked');
+  } else if (Array.isArray(value)) {
+    for (const line of value)
+      jsEditor.doc.addLineClass(line - 1, 'wrap', 'marked');
+  }
 }
 
 // Register the tag for the element, only if it isn't already registered
