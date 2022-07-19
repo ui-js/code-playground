@@ -566,13 +566,17 @@ TEMPLATE.innerHTML = `
     opacity: 1;
     color: var(--base-07, #fff);
   }
-  .CodeMirror .marked pre.CodeMirror-line {
-    background: var(--editor-marked-line, var(--blue-700, #0c6abe)) !important;
-    background: linear-gradient(
-        90deg, 
-        rgba(#000, 0) 0%, 
-        var(--editor-marked-line, var(--blue-700, #0c6abe)) 66%, 
-        rgba(#000, 0) 100%);
+
+  .CodeMirror .marked pre.CodeMirror-line::before {
+    content: "";
+    position: absolute;
+    top: 0; 
+    left: 0;
+    width: 100%; 
+    height: 100%;  
+    opacity: .5; 
+    z-index: -1;
+    background: var(--editor-marked-line, var(--cyan-700, #0c6abe)) !important;
   }
 </style>
 <slot name="style"></slot><slot name="preamble"></slot>
@@ -670,15 +674,21 @@ class CodePlaygroundElement extends HTMLElement {
             this.activateTab(newValue);
         }
         else if (name === 'layout') {
-            this.shadowRoot
-                .querySelector(':host > div')
-                .classList.toggle('tab-layout', newValue !== 'stack');
-            this.shadowRoot
-                .querySelector(':host > div')
-                .classList.toggle('stack-layout', newValue === 'stack');
+            const div = this.shadowRoot.querySelector(':host > div');
+            div.classList.toggle('tab-layout', newValue !== 'stack');
+            div.classList.toggle('stack-layout', newValue === 'stack');
         }
-        else if (name === 'mark-line') {
-            mark(this.shadowRoot, newValue);
+        else if (name === 'mark-line' || name === 'mark-javascript-line') {
+            mark(this.shadowRoot, 'javascript', newValue);
+        }
+        else if (name === 'mark-css-line') {
+            mark(this.shadowRoot, 'css', newValue);
+        }
+        else if (name === 'mark-json-line') {
+            mark(this.shadowRoot, 'json', newValue);
+        }
+        else if (name === 'mark-html-line') {
+            mark(this.shadowRoot, 'html', newValue);
         }
         else if (name === 'show-line-numbers') {
             this.shadowRoot
@@ -724,18 +734,19 @@ class CodePlaygroundElement extends HTMLElement {
         const self = this;
         const activateTab = function (ev) {
             const tab = ev.target;
-            if (tab.tagName === 'LABEL') {
+            if (tab.tagName.toLowerCase() === 'label')
                 self.activateTab(tab.parentNode.dataset.name);
-            }
         };
         // 1. Remove the event handlers
-        shadowRoot.querySelectorAll('.tab').forEach((x) => {
-            x.removeEventListener('click', activateTab);
-        });
+        shadowRoot
+            .querySelectorAll('.tab')
+            .forEach((x) => x.removeEventListener('click', activateTab));
         // 2. Collect the content of each tab
-        const slots = shadowRoot.querySelectorAll('.original-content slot');
+        const slots = [
+            ...shadowRoot.querySelectorAll('.original-content slot'),
+        ];
         let content = '';
-        slots.forEach((slot) => {
+        for (const slot of slots) {
             let text = slot
                 .assignedNodes()
                 .map((node) => node.innerHTML)
@@ -743,12 +754,12 @@ class CodePlaygroundElement extends HTMLElement {
             if (text) {
                 // Remove empty comments. This 'trick' is used to work around
                 // an issue where Eleventy ignores empty lines in HTML blocks,
-                // so an empty comment is insert, but it now needs to be removed
+                // so an empty comment is inserted, but it now needs to be removed
                 // so that the empty line is properly picked up by CodeMirror. Sigh.
                 text = text.replace(/<!-- -->/g, '');
                 const tabId = randomId();
                 const language = slot.name;
-                content += `<div class='tab' id="${tabId}" data-name="${language}">
+                content += `<div class='tab' data-name="${language}">
         <input type="radio" id="${tabId}" name="${this.id}">
         <label for="${tabId}">${language}</label>
         <div part="editor" class="content ${language.toLowerCase()}">
@@ -756,7 +767,7 @@ class CodePlaygroundElement extends HTMLElement {
         </div>
     </div>`;
             }
-        });
+        }
         shadowRoot.querySelector('.tabs').innerHTML = content;
         // 3. Listen to tab activation
         const tabs = shadowRoot.querySelectorAll('.tab');
@@ -764,9 +775,9 @@ class CodePlaygroundElement extends HTMLElement {
             tabs.forEach((x) => (x.querySelector('.tab > label').style.display = 'none'));
         }
         else {
-            shadowRoot.querySelectorAll('.tab label').forEach((x) => {
-                x.addEventListener('click', activateTab);
-            });
+            shadowRoot
+                .querySelectorAll('.tab label')
+                .forEach((x) => x.addEventListener('click', activateTab));
         }
         const firstTab = tabs[0];
         const lastTab = tabs[tabs.length - 1];
@@ -808,15 +819,14 @@ class CodePlaygroundElement extends HTMLElement {
                 });
                 editor.setValue(sanitizeInput(x.value));
                 editor.setSize('100%', '100%');
-                if (lang === 'javascript') {
-                    if (this.markLine)
-                        mark(shadowRoot, this.markLine);
-                }
+                mark(shadowRoot, x.dataset.language, this.getAttribute(`mark-${x.dataset.language}-line`));
                 editor.on('change', () => this.editorContentChanged());
             });
         }
         // 5. Activate the previously active tab, or the first one
-        this.activateTab(this.activeTab || tabs[0].dataset.name);
+        this.activateTab(this.activeTab || tabs[0].dataset.name, {
+            refresh: false,
+        });
         // 6. Run the playground
         this.runPlayground();
         // Refresh the codemirror layouts
@@ -825,24 +835,26 @@ class CodePlaygroundElement extends HTMLElement {
             .querySelectorAll('textarea + .CodeMirror')
             .forEach((x) => { var _a; return (_a = x === null || x === void 0 ? void 0 : x['CodeMirror']) === null || _a === void 0 ? void 0 : _a.refresh(); }), 128);
     }
-    activateTab(name) {
+    activateTab(name, options) {
         var _a;
-        const activeTab = (_a = this.shadowRoot.querySelector(`[data-name=${name}]`)) !== null && _a !== void 0 ? _a : this.shadowRoot.querySelectorAll('.tab')[0];
+        const activeTab = (_a = this.shadowRoot.querySelector(`[data-name=${name}]`)) !== null && _a !== void 0 ? _a : this.shadowRoot.querySelector('.tab');
         if (!activeTab)
             return;
         activeTab.querySelector('input[type="radio"]').checked =
             true;
-        this.shadowRoot
-            .querySelector('.tabs')
-            .style.setProperty('--tab-indicator-offset', activeTab.offsetLeft -
+        const offset = activeTab.offsetLeft -
             this.shadowRoot.querySelector('.tab:first-of-type')
-                .offsetLeft +
-            'px');
-        requestAnimationFrame(() => {
-            var _a, _b;
-            return (_b = (_a = activeTab
-                .querySelector('textarea + .CodeMirror')) === null || _a === void 0 ? void 0 : _a['CodeMirror']) === null || _b === void 0 ? void 0 : _b.refresh();
-        });
+                .offsetLeft;
+        if (offset !== 0)
+            this.shadowRoot
+                .querySelector('.tabs')
+                .style.setProperty('--tab-indicator-offset', offset + 'px');
+        if ((options === null || options === void 0 ? void 0 : options.refresh) === true)
+            requestAnimationFrame(() => {
+                var _a, _b;
+                return (_b = (_a = activeTab
+                    .querySelector('textarea + .CodeMirror')) === null || _a === void 0 ? void 0 : _a['CodeMirror']) === null || _b === void 0 ? void 0 : _b.refresh();
+            });
     }
     runPlayground() {
         var _a, _b, _c, _d;
@@ -983,10 +995,7 @@ class CodePlaygroundElement extends HTMLElement {
             if (text) {
                 const editor = this.shadowRoot.querySelector(`textarea[data-language="${slot.name}"] + .CodeMirror`);
                 editor['CodeMirror'].setValue(sanitizeInput(text));
-                if (slot.name === 'javascript') {
-                    if (this.markLine)
-                        mark(this.shadowRoot, this.markLine);
-                }
+                mark(this.shadowRoot, slot.name, this.getAttribute(`mark-${slot.name}-line`));
             }
         });
     }
@@ -1093,6 +1102,8 @@ class CodePlaygroundElement extends HTMLElement {
         });
         // Important: keep the ${script} on a separate line. The content could
         // be "// a comment" which would result in the script failing to parse
+        //
+        // Note: the function is marked `async` so that await can be used in its body
         return (imports
             .map((x) => {
             if (this.moduleMap[x[2]])
@@ -1103,7 +1114,7 @@ class CodePlaygroundElement extends HTMLElement {
             `const playground${jsID} = document.getElementById("${this.id}").shadowRoot;` +
             `const console${jsID} = playground${jsID}.host.pseudoConsole();` +
             `const output${jsID} = playground${jsID}.querySelector("div.result > div.output");` +
-            'try{(function() {\n' +
+            'try{(async function() {\n' +
             script +
             `\n}());} catch(err) { console${jsID}.catch(err) }`);
     }
@@ -1484,14 +1495,21 @@ function sanitizeInput(s) {
         .join('\n');
     return s;
 }
-function mark(root, arg) {
+function mark(root, language, arg) {
     var _a;
-    const jsEditor = (_a = root.querySelector('textarea[data-language="javascript"] + .CodeMirror')) === null || _a === void 0 ? void 0 : _a['CodeMirror'];
-    if (!jsEditor)
+    if (arg === undefined)
         return;
-    // jsEditor.doc.getAllMarks().forEach((marker) => marker.clear());
-    for (let i = jsEditor.doc.firstLine; i <= jsEditor.doc.lastLine; i++)
-        jsEditor.doc.removeLineClass(i, 'wrap', 'marked');
+    const editor = (_a = root.querySelector(`textarea[data-language="${language}"] + .CodeMirror`)) === null || _a === void 0 ? void 0 : _a['CodeMirror'];
+    if (!editor)
+        return;
+    for (let i = editor.doc.firstLine; i <= editor.doc.lastLine; i++)
+        editor.doc.removeLineClass(i, 'wrap', 'marked');
+    if (typeof arg === 'string' && /\d+-\d+/.test(arg)) {
+        const [, from, to] = arg.match(/(\d+)-(\d+)/);
+        for (let i = parseInt(from); i <= parseInt(to); i++)
+            editor.doc.addLineClass(i - 1, 'wrap', 'marked');
+        return;
+    }
     let value = arg;
     try {
         if (typeof arg === 'string' && arg.length > 0)
@@ -1501,17 +1519,11 @@ function mark(root, arg) {
     if (value === '' || value === 'none')
         return;
     if (typeof value === 'number') {
-        jsEditor.doc.addLineClass(value - 1, 'wrap', 'marked');
+        editor.doc.addLineClass(value - 1, 'wrap', 'marked');
     }
     else if (Array.isArray(value)) {
-        const [from, to] = value;
-        for (let i = from; i <= to; i++)
-            jsEditor.doc.addLineClass(i - 1, 'wrap', 'marked');
-        // jsEditor.doc.markText(
-        //   { line: from - 1 },
-        //   { line: to - 1 },
-        //   { className: 'marked' }
-        // );
+        for (const line of value)
+            editor.doc.addLineClass(line - 1, 'wrap', 'marked');
     }
 }
 // Register the tag for the element, only if it isn't already registered
