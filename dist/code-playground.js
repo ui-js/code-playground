@@ -797,6 +797,10 @@ class CodePlaygroundElement extends HTMLElement {
             lastTab.style.paddingBottom = '0';
         }
         // 4. Setup editors
+        // @todo: migrate to CodeMirror 6: https://codemirror.net/docs/migration/
+        // @todo: bundle CodeMirror library with rollup
+        // @todo: replace .fromTextArea() with new EditorView()
+        // @todo: update CSS (see DOM Structure)
         if (CodeMirror !== undefined) {
             this.resizeObserver.disconnect();
             shadowRoot
