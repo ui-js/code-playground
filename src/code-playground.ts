@@ -106,7 +106,7 @@ TEMPLATE.innerHTML = `
     border: var(--ui-border, 1px solid rgba(0, 0, 0, .2));
   }
   div.result > div.output.visible {
-    display:  block;
+    display:  flex;
   }
   .output textarea {
     width: calc(100% - 16px);
