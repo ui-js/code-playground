@@ -93,6 +93,14 @@ TEMPLATE.innerHTML = `
     border: none;
     height: 100%;
   }
+  .output {
+    border-radius: 8px;
+    padding: 8px;
+    border: var(--ui-border, 1px solid rgba(0, 0, 0, .2));
+  }
+  .output textarea {
+    width: calc(100% - 16px);
+  }
   .result {
     width: calc(50% - .5em);
     margin-left: .5em;
@@ -100,16 +108,9 @@ TEMPLATE.innerHTML = `
   div.result > div.output {
     display: none;
   }
-  .output {
-    border-radius: 8px;
-    padding: 8px;
-    border: var(--ui-border, 1px solid rgba(0, 0, 0, .2));
-  }
   div.result > div.output.visible {
     display:  flex;
-  }
-  .output textarea {
-    width: calc(100% - 16px);
+    flex-flow: column;
   }
   .stack-layout .source, .stack-layout .result {
     width: auto;
