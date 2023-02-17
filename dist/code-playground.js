@@ -25,7 +25,7 @@ const TAB_WIDTH = 150;
 const DEFAULT_AUTORUN_DELAY = 1000;
 const TEMPLATE = document.createElement('template');
 TEMPLATE.innerHTML = `
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.11/codemirror.min.css">
 <style>
   :host {
     display: block;
