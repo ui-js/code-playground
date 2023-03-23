@@ -398,6 +398,12 @@ TEMPLATE.innerHTML = `
     background: var(--primary-color, #0066ce);
     border: 1px solid var(--primary-color, #0066ce);
   }
+  math-field {
+    border: var(--ui-border, 1px solid #ccc);
+    border-radius: 8px;
+    padding: 8px;
+    background: var(--ui-background, #fff);
+  }
   .mathfield {
     display: block;
     border: var(--ui-border, 1px solid #ccc);
@@ -684,14 +690,10 @@ export class CodePlaygroundElement extends HTMLElement {
     // Add event handler for "run" and "reset" button
     this.shadowRoot
       .getElementById('run-button')
-      .addEventListener('click', (_ev) => {
-        this.runPlayground();
-      });
+      .addEventListener('click', (_ev) => this.runPlayground());
     this.shadowRoot
       .getElementById('reset-button')
-      .addEventListener('click', (_ev) => {
-        this.resetPlayground();
-      });
+      .addEventListener('click', (_ev) => this.resetPlayground());
 
     // Track insertion/changes to slots
     this.shadowRoot
@@ -905,7 +907,7 @@ export class CodePlaygroundElement extends HTMLElement {
       );
   }
 
-  runPlayground(): void {
+  async runPlayground(): Promise<void> {
     const section = this.shadowRoot;
     const result = section.querySelector('.result');
 
@@ -960,8 +962,7 @@ export class CodePlaygroundElement extends HTMLElement {
       this.outputStylesheets.forEach((x) => {
         const href = x.trim();
         if (href.length > 0) {
-          htmlContent =
-            `<link rel="stylesheet" href="${href}"></link>` + htmlContent;
+          htmlContent = `<link rel="stylesheet" href="${href}"></link>${htmlContent}`;
         }
       });
       const outputElement = section.querySelector('div.result > div.output');
@@ -986,6 +987,15 @@ export class CodePlaygroundElement extends HTMLElement {
           'textarea[data-language="javascript"]'
         )?.value ?? '';
     }
+
+    // If there are any custom elements in the HTML wait for them to be
+    // defined before executing the script which may refer to them
+    for (const x of htmlContent.matchAll(
+      /<([a-zA-Z0-9]+\-[a-zA-Z0-9]*)[^>]+>/g
+    )) {
+      await customElements.whenDefined(x[1]);
+    }
+
     const newScript = document.createElement('script');
     newScript.type = 'module';
     this.pseudoConsole().clear();

@@ -395,6 +395,12 @@ TEMPLATE.innerHTML = `
     background: var(--primary-color, #0066ce);
     border: 1px solid var(--primary-color, #0066ce);
   }
+  math-field {
+    border: var(--ui-border, 1px solid #ccc);
+    border-radius: 8px;
+    padding: 8px;
+    background: var(--ui-background, #fff);
+  }
   .mathfield {
     display: block;
     border: var(--ui-border, 1px solid #ccc);
@@ -608,14 +614,10 @@ class CodePlaygroundElement extends HTMLElement {
         // Add event handler for "run" and "reset" button
         this.shadowRoot
             .getElementById('run-button')
-            .addEventListener('click', (_ev) => {
-            this.runPlayground();
-        });
+            .addEventListener('click', (_ev) => this.runPlayground());
         this.shadowRoot
             .getElementById('reset-button')
-            .addEventListener('click', (_ev) => {
-            this.resetPlayground();
-        });
+            .addEventListener('click', (_ev) => this.resetPlayground());
         // Track insertion/changes to slots
         this.shadowRoot
             .querySelector('.original-content')
@@ -861,7 +863,7 @@ class CodePlaygroundElement extends HTMLElement {
                     .querySelector('textarea + .CodeMirror')) === null || _a === void 0 ? void 0 : _a['CodeMirror']) === null || _b === void 0 ? void 0 : _b.refresh();
             });
     }
-    runPlayground() {
+    async runPlayground() {
         var _a, _b, _c, _d;
         const section = this.shadowRoot;
         const result = section.querySelector('.result');
@@ -908,8 +910,7 @@ class CodePlaygroundElement extends HTMLElement {
             this.outputStylesheets.forEach((x) => {
                 const href = x.trim();
                 if (href.length > 0) {
-                    htmlContent =
-                        `<link rel="stylesheet" href="${href}"></link>` + htmlContent;
+                    htmlContent = `<link rel="stylesheet" href="${href}"></link>${htmlContent}`;
                 }
             });
             const outputElement = section.querySelector('div.result > div.output');
@@ -932,6 +933,11 @@ class CodePlaygroundElement extends HTMLElement {
         else {
             jsContent =
                 (_d = (_c = section.querySelector('textarea[data-language="javascript"]')) === null || _c === void 0 ? void 0 : _c.value) !== null && _d !== void 0 ? _d : '';
+        }
+        // If there are any custom elements in the HTML wait for them to be
+        // defined before executing the script which may refer to them
+        for (const x of htmlContent.matchAll(/<([a-zA-Z0-9]+\-[a-zA-Z0-9]*)[^>]+>/g)) {
+            await customElements.whenDefined(x[1]);
         }
         const newScript = document.createElement('script');
         newScript.type = 'module';
