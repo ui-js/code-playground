@@ -77,6 +77,8 @@ TEMPLATE.innerHTML = `
     font-family: var(--monospace-font, 'JetBrains Mono', 'IBM Plex Mono', 'Fira Code', 'Source Code Pro'),  monospace;
     font-size: 16px;
     line-height: 1.2;
+    color: var(--text-color);
+    background: var(--ui-background);
   }
   #run-button {
       display: none;
@@ -399,15 +401,26 @@ TEMPLATE.innerHTML = `
     border: var(--ui-border, 1px solid #ccc);
     border-radius: 8px;
     padding: 8px;
-    background: var(--ui-background, #fff);
+    color: var(--text-color);
+    background: var(--ui-background);
+    }
+@media (prefers-color-scheme: dark) {
+  :root {
+    --selection-background-color: var(--primary-color);
+    --selection-color: #fff;
   }
-  .mathfield {
+  
+  math-field:focus-within {
+    outline: var(--primary-color) solid 2px;
+  }
+  
+}
+    .mathfield {
     display: block;
     border: var(--ui-border, 1px solid #ccc);
     border-radius: 8px;
     padding: .5em;
     font-size: 2rem;
-    background: var(--ui-background, #fff);
   }
   @media (max-width: 777px) { 
     :host > div {
