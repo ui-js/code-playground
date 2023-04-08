@@ -949,7 +949,7 @@ class CodePlaygroundElement extends HTMLElement {
         }
         // If there are any custom elements in the HTML wait for them to be
         // defined before executing the script which may refer to them
-        for (const x of htmlContent.matchAll(/<([a-zA-Z0-9]+\-[a-zA-Z0-9]*)[^>]+>/g)) {
+        for (const x of htmlContent.matchAll(/\<([a-zA-Z0-9]+\-[a-zA-Z0-9]*)[^\>]*\>/g)) {
             await customElements.whenDefined(x[1]);
         }
         const newScript = document.createElement('script');
