@@ -37,7 +37,7 @@ after changing it.
 
 To revert your changes and restore the initial content, press **Reset**.
 
-The Javascript source code is modified before execution to be executable in a
+The JavaScript source code is modified before execution to be executable in a
 'sandbox':
 
 - the `console` calls, such as `console.log()` are intercepted so they are
