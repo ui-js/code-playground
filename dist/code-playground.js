@@ -437,12 +437,15 @@ TEMPLATE.innerHTML = `
 
 
   /* Tomorrow Comment */
-  .hljs-comment,
-  .hljs-title {
+  .hljs-comment {
       color: var(--base-04, ${base04});
-      font-style: italic;
   }
   
+  /* Function (JS) and tag (HTML) names */
+  .hljs-tag, .hljs-title {
+      color: var(--base-0a, ${base0a});
+  }
+    
   /* Tomorrow Red */
   .hljs-variable,
   .hljs-attribute,
@@ -551,30 +554,34 @@ TEMPLATE.innerHTML = `
   
   .CodeMirror {
     font-family: var(--monospace-font,'JetBrains Mono', 'IBM Plex Mono', 'Fira Code', 'Source Code Pro', monospace);
+    color: inherit;
   }
-  .cm-s-tomorrow-night.CodeMirror { background: var(--base-00, ${base00}); color: var(--base-05, ${base05}); }
-  .cm-s-tomorrow-night div.CodeMirror-selected { background: var(--base-01, ${base01}); }
-  .cm-s-tomorrow-night .CodeMirror-line::selection, .cm-s-tomorrow-night .CodeMirror-line > span::selection, .cm-s-tomorrow-night .CodeMirror-line > span > span::selection { background: rgba(45, 45, 45, 0.99); }
-  .cm-s-tomorrow-night .CodeMirror-line::-moz-selection, .cm-s-tomorrow-night .CodeMirror-line > span::-moz-selection, .cm-s-tomorrow-night .CodeMirror-line > span > span::-moz-selection { background: rgba(45, 45, 45, 0.99); }
-  .cm-s-tomorrow-night .CodeMirror-gutters { background: var(--base-00, ${base00}); border-right: 0px; }
+  .cm-s-tomorrow-night.CodeMirror { background: transparent; }
+  .cm-s-tomorrow-night div.CodeMirror-selected { background: var(--selection-background, var(--base-01, ${base01})); color: var(--selection-color, inherit);}
+  
+  .cm-s-tomorrow-night .CodeMirror-line::selection, .cm-s-tomorrow-night .CodeMirror-line > span::selection, .cm-s-tomorrow-night .CodeMirror-line > span > span::selection { background: var(--selection-background, rgba(45, 45, 45, 0.99)); color: var(--selection-color, inherit);}
+
+  .cm-s-tomorrow-night .CodeMirror-line::-moz-selection, .cm-s-tomorrow-night .CodeMirror-line > span::-moz-selection, .cm-s-tomorrow-night .CodeMirror-line > span > span::-moz-selection { background: var(--selection-background, rgba(45, 45, 45, 0.99)); color: var(--selection-color, inherit);}
+
+  .cm-s-tomorrow-night .CodeMirror-gutters { background: transparent; border-right: 0px; }
   .cm-s-tomorrow-night .CodeMirror-guttermarker { color: var(--base-0c, ${base0c}); }
   .cm-s-tomorrow-night .CodeMirror-guttermarker-subtle { color: var(--base-03, ${base03}); }
   .cm-s-tomorrow-night .CodeMirror-linenumber { color: var(--base-04, ${base04}); opacity: .7; }
   .cm-s-tomorrow-night .CodeMirror-cursor { border-left: 1px solid ${base0d}; }
   
-  .cm-s-tomorrow-night span.cm-comment { color: var(--base-09, ${base09}); }
+  .cm-s-tomorrow-night span.cm-comment { color: var(--base-04, ${base04}); }
   .cm-s-tomorrow-night span.cm-atom { color: var(--base-0e, ${base0e}); }
   .cm-s-tomorrow-night span.cm-number { color: var(--base-0e, ${base0e}); }
   
-  .cm-s-tomorrow-night span.cm-property, .cm-s-tomorrow-night span.cm-attribute { color: var(--base-0b, ${base0b}); }
+  .cm-s-tomorrow-night span.cm-property, .cm-s-tomorrow-night span.cm-attribute { color: var(--base-0a, ${base0a}); }
   .cm-s-tomorrow-night span.cm-keyword { color: var(--base-0c, ${base0c}); }
-  .cm-s-tomorrow-night span.cm-string { color: var(--base-0a, ${base0a}); }
+  .cm-s-tomorrow-night span.cm-string { color: var(--base-0b, ${base0b}); }
   
   .cm-s-tomorrow-night span.cm-variable { color: var(--base-0b, ${base0b}); }
   .cm-s-tomorrow-night span.cm-variable-2 { color: var(--base-0d, ${base0d}); }
   .cm-s-tomorrow-night span.cm-def { color: var(--base-09, ${base09}); }
   .cm-s-tomorrow-night span.cm-bracket { color: var(--base-05, ${base05}); }
-  .cm-s-tomorrow-night span.cm-tag { color: var(--base-0c, ${base0c}); }
+  .cm-s-tomorrow-night span.cm-tag { color: var(--base-0a, ${base0a}); }
   .cm-s-tomorrow-night span.cm-link { color: var(--base-0e, ${base0e}); }
   .cm-s-tomorrow-night span.cm-error { background: var(--base-0c, ${base0c}); color: var(--base-03, ${base03}); }
   
@@ -1030,6 +1037,7 @@ class CodePlaygroundElement extends HTMLElement {
         if (!console) {
             console = document.createElement('pre');
             console.classList.add('console');
+            console.setAttribute('part', 'console');
             shadowRoot.querySelector('.result').appendChild(console);
         }
         const updateConsole = () => {
