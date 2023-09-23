@@ -77,7 +77,7 @@ TEMPLATE.innerHTML = `
     resize: vertical;
     width: 100%;
     min-height: 4em;
-    font-family: var(--monospace-font, 'JetBrains Mono', 'IBM Plex Mono', 'Fira Code', 'Source Code Pro'),  monospace;
+    font-family: var(--monospace-font-family), 'Berkeley Mono', 'JetBrains Mono', 'IBM Plex Mono', 'Fira Code', monospace;
     font-size: 16px;
     line-height: 1.2;
     color: var(--text-color);
@@ -135,16 +135,25 @@ TEMPLATE.innerHTML = `
     padding: 8px 8px 8px 1em;
     border-radius: 8px;
     overflow: auto;
-    font-family: var(--monospace-font,'JetBrains Mono', 'IBM Plex Mono', 'Fira Code', 'Source Code Pro', monospace);
+    font-family: var(--monospace-font-family), 'Berkeley Mono', 'JetBrains Mono', 'IBM Plex Mono', 'Fira Code', monospace;
     font-size: 1em;
     color: var(--base-05, ${base05});
     background: var(--base-00, ${base00});
     white-space: pre-wrap;
     border: var(--ui-border, 1px solid rgba(0, 0, 0, .2));
   }
+
   div.result > pre.console.visible {
     display: block;
   }
+
+  .console .cursor {
+    width: 1ex;
+    height: 1em;
+    color: var(--base-05, ${base05});
+    background: var(--base-05, ${base05});
+  }
+
   .console .sep {
     color: var(--base-05, ${base05});
   }
@@ -185,7 +194,7 @@ TEMPLATE.innerHTML = `
   }
   .console .error {
     display: block;
-    width: calc(100% - 10px);
+    width: calc(100% - 16px);
     padding-right: 4px;
     padding-top: 8px;
     padding-bottom:8px;
@@ -248,7 +257,7 @@ TEMPLATE.innerHTML = `
     top: auto;
     left: auto;
     bottom: auto;
-    padding: 8px 8px 8px 1em;
+    padding: 8px 0 0 8px;
     background: var(--base-00, ${base00});
     overflow: hidden;
   }
@@ -352,7 +361,8 @@ TEMPLATE.innerHTML = `
     justify-content: space-between;
     padding-left: 1em;
     padding-right: 1em;
-    padding-bottom: .5em;
+    padding-bottom: 8px;
+    padding-top: 8px;
   }
   .buttons.visible {
       display: flex;
@@ -361,17 +371,22 @@ TEMPLATE.innerHTML = `
     display: inline-block;
     margin-bottom: 0.25em;
     padding: 0.5em 1em;
-    font-size: 14px;
-    min-height: 30px;
+    min-height: 2em;
     margin-top: 6px;
     margin-bottom: 6px;
+
+    font-family: var(--ui-font, -apple-system, BlinkMacSystemFont, "Segoe UI",
+      Roboto, Oxygen-Sans, Ubuntu, Cantarell,
+      "Helvetica Neue", "Source Sans Pro", sans-serif);
     font-weight: 700;
+    font-size: 1em;
+
     text-align: center;
     text-decoration: none;
-    border-radius: 4px;
+    border-radius: 8px;
+
     cursor: pointer;
     user-select: none;
-    text-transform: uppercase;
     outline: none;
     background: var(--base-01, ${base01});
     color: var(--base-05, ${base05});
@@ -556,7 +571,7 @@ TEMPLATE.innerHTML = `
   }
   
   .CodeMirror {
-    font-family: var(--monospace-font,'JetBrains Mono', 'IBM Plex Mono', 'Fira Code', 'Source Code Pro', monospace);
+    font-family: var(--monospace-font-family), 'Berkeley Mono', 'JetBrains Mono', 'IBM Plex Mono', 'Fira Code', monospace;
     color: inherit;
   }
   .cm-s-tomorrow-night.CodeMirror { background: transparent; }
@@ -622,6 +637,8 @@ export class CodePlaygroundElement extends HTMLElement {
   private runTimer: number;
   private consoleUpdateTimer: number;
   private consoleContent: string; // Pending content not yet displayed in the console.
+  // True if the user has made some changes
+  private edited = false;
 
   static get observedAttributes(): string[] {
     return [
@@ -648,9 +665,10 @@ export class CodePlaygroundElement extends HTMLElement {
     if (isFinite(parseFloat(value))) return parseFloat(value);
     return DEFAULT_AUTORUN_DELAY;
   }
+
   set autorun(value: 'never' | number) {
     this.setAttribute('autorun', value.toString());
-    const runButton = this.shadowRoot.getElementById('run-botton');
+    const runButton = this.shadowRoot.getElementById('run-button');
     if (value === 'never') {
       runButton.classList.add('visible');
     } else {
@@ -705,18 +723,19 @@ export class CodePlaygroundElement extends HTMLElement {
 <div class='result'><div class='output'></div></div></div>`;
 
     container.innerHTML = containerContent;
-    this.shadowRoot.appendChild(container);
+    const shadowRoot = this.shadowRoot;
+    shadowRoot.appendChild(container);
 
     // Add event handler for "run" and "reset" button
-    this.shadowRoot
+    shadowRoot
       .getElementById('run-button')
-      .addEventListener('click', (_ev) => this.runPlayground());
-    this.shadowRoot
+      .addEventListener('click', (_ev) => this.run());
+    shadowRoot
       .getElementById('reset-button')
-      .addEventListener('click', (_ev) => this.resetPlayground());
+      .addEventListener('click', (_ev) => this.reset());
 
     // Track insertion/changes to slots
-    this.shadowRoot
+    shadowRoot
       .querySelector('.original-content')
       .addEventListener('slotchange', (_ev) => {
         this.dirty = true;
@@ -725,7 +744,7 @@ export class CodePlaygroundElement extends HTMLElement {
 
     this.resizeObserver = new ResizeObserver(() => {
       requestAnimationFrame(() => {
-        this.shadowRoot
+        shadowRoot
           .querySelectorAll('textarea + .CodeMirror')
           .forEach((x) => x?.['CodeMirror']?.refresh());
       });
@@ -733,6 +752,7 @@ export class CodePlaygroundElement extends HTMLElement {
   }
 
   get buttonBarVisibility(): string {
+    if (this.autorun === 'never') return 'visible';
     return this.getAttribute('button-bar-visibility') ?? 'auto';
   }
   set buttonBarVisibility(value: string) {
@@ -757,12 +777,35 @@ export class CodePlaygroundElement extends HTMLElement {
       style.textContent = styleContent;
       this.shadowRoot.appendChild(style);
     }
-    if (
-      this.buttonBarVisibility === 'auto' ||
-      this.buttonBarVisibility === 'hidden'
-    ) {
-      this.shadowRoot.querySelector('.buttons').classList.remove('visible');
+
+    this.updateButtonBar();
+  }
+
+  updateButtonBar(): void {
+    let buttonBarVisibility = this.buttonBarVisibility;
+    if (buttonBarVisibility === 'auto') {
+      // Auto = show only when needed (some changes have been made to
+      // the content)
+      buttonBarVisibility = this.edited ? 'visible' : 'hidden';
     }
+
+    const buttonBar = this.shadowRoot.querySelector('.buttons');
+
+    const resetButton = this.shadowRoot.getElementById(
+      'reset-button'
+    )! as HTMLButtonElement;
+    resetButton.disabled = !this.edited;
+
+    const runButton = this.shadowRoot.getElementById(
+      'run-button'
+    )! as HTMLButtonElement;
+    resetButton.disabled = !this.edited;
+    if (this.autorun === 'never') runButton.classList.add('visible');
+    else runButton.classList.remove('visible');
+
+    if (buttonBarVisibility === 'visible') buttonBar.classList.add('visible');
+    else if (buttonBarVisibility === 'hidden')
+      buttonBar.classList.remove('visible');
   }
 
   // The content of the code section has changed. Rebuild the tabs
@@ -858,6 +901,9 @@ export class CodePlaygroundElement extends HTMLElement {
 
           const lang =
             {
+              ts: 'typescript',
+              typescript: 'typescript',
+              js: 'javascript',
               javascript: 'javascript',
               json: { name: 'javascript', json: true },
               css: 'css',
@@ -872,11 +918,15 @@ export class CodePlaygroundElement extends HTMLElement {
           });
           editor.setValue(sanitizeInput(x.value));
           editor.setSize('100%', '100%');
+          if (x.dataset.language === 'javascript')
+            mark(shadowRoot, 'javascript', this.getAttribute('mark-line'));
+
           mark(
             shadowRoot,
             x.dataset.language,
             this.getAttribute(`mark-${x.dataset.language}-line`)
           );
+
           editor.on('change', () => this.editorContentChanged());
         });
     }
@@ -887,7 +937,7 @@ export class CodePlaygroundElement extends HTMLElement {
     });
 
     // 6. Run the playground
-    this.runPlayground();
+    if (this.autorun !== 'never') this.run();
 
     // Refresh the codemirror layouts
     // (important to get the linenumbers to display correctly)
@@ -927,7 +977,7 @@ export class CodePlaygroundElement extends HTMLElement {
       );
   }
 
-  async runPlayground(): Promise<void> {
+  async run() {
     const section = this.shadowRoot;
     const result = section.querySelector('.result');
 
@@ -1008,6 +1058,8 @@ export class CodePlaygroundElement extends HTMLElement {
         )?.value ?? '';
     }
 
+    this.pseudoConsole().clear();
+
     // If there are any custom elements in the HTML wait for them to be
     // defined before executing the script which may refer to them
     for (const x of htmlContent.matchAll(
@@ -1018,9 +1070,9 @@ export class CodePlaygroundElement extends HTMLElement {
 
     const newScript = document.createElement('script');
     newScript.type = 'module';
-    this.pseudoConsole().clear();
     try {
       newScript.textContent = this.processLiveCodeJavascript(jsContent);
+      // The script is executed when it is inserted in the DOM
       result.appendChild(newScript);
     } catch (err) {
       // If there's a syntax error in the script, catch it here
@@ -1048,31 +1100,25 @@ export class CodePlaygroundElement extends HTMLElement {
   }
 
   editorContentChanged(): void {
-    this.shadowRoot.querySelector<HTMLButtonElement>('#reset-button').disabled =
-      false;
-    if (this.buttonBarVisibility === 'auto') {
-      this.shadowRoot.querySelector('.buttons').classList.add('visible');
-      const tabs = this.shadowRoot.querySelectorAll<HTMLElement>('.tab');
-      const lastTab = tabs[tabs.length - 1];
-      const tabContent = lastTab.querySelector<HTMLElement>('.content');
-      tabContent.style.borderBottomLeftRadius = '0';
-      tabContent.style.borderBottomRightRadius = '0';
-      lastTab.style.marginBottom = '0.5em';
-      lastTab.style.paddingBottom = '0.5em';
+    this.edited = true;
 
-      if (this.autorun === 'never') {
-        const runButton = this.shadowRoot.getElementById('run-botton');
-        runButton.classList.add('visible');
-      } else {
-        if (this.runTimer) {
-          clearTimeout(this.runTimer);
-        }
-        this.runTimer = setTimeout(() => this.runPlayground(), this.autorun);
-      }
+    this.updateButtonBar();
+
+    if (this.autorun !== 'never') {
+      // const tabs = this.shadowRoot.querySelectorAll<HTMLElement>('.tab');
+      // const lastTab = tabs[tabs.length - 1];
+      // const tabContent = lastTab.querySelector<HTMLElement>('.content');
+      // tabContent.style.borderBottomLeftRadius = '0';
+      // tabContent.style.borderBottomRightRadius = '0';
+      // lastTab.style.marginBottom = '0.5em';
+      // lastTab.style.paddingBottom = '0.5em';
+
+      if (this.runTimer) clearTimeout(this.runTimer);
+      this.runTimer = setTimeout(() => this.run(), this.autorun);
     }
   }
 
-  resetPlayground(): void {
+  reset(): void {
     const slots = this.shadowRoot.querySelectorAll('.original-content slot');
     slots.forEach((slot: HTMLSlotElement) => {
       const text = slot
@@ -1084,6 +1130,10 @@ export class CodePlaygroundElement extends HTMLElement {
           `textarea[data-language="${slot.name}"] + .CodeMirror`
         );
         editor['CodeMirror'].setValue(sanitizeInput(text));
+
+        if (slot.name === 'javascript')
+          mark(this.shadowRoot, 'javascript', this.getAttribute('mark-line'));
+
         mark(
           this.shadowRoot,
           slot.name,
@@ -1115,16 +1165,32 @@ export class CodePlaygroundElement extends HTMLElement {
         console.scrollTop = console.scrollHeight;
       }, 100);
     };
-    const appendConsole = (msg: string) => {
-      let lines = this.consoleContent.split('\n');
+    const appendConsole = (msg: string, cls?: string) => {
+      let lines = this.consoleContent?.split('\n') ?? [];
       if (lines.length > CONSOLE_MAX_LINES)
         lines = lines.slice(lines.length - CONSOLE_MAX_LINES + 1);
 
+      // Simulate a slow teleprinter
+      if (this.consoleUpdateTimer) clearTimeout(this.consoleUpdateTimer);
+      console.classList.add('visible');
+      // echo(msg + '\n', (s) => {
+      //   this.consoleContent =
+      //     (cls ? `<span class="${cls}">` : '') +
+      //     lines.join('\n') +
+      //     '&nbsp;&nbsp;'.repeat(parseInt(console.dataset['group-level']) ?? 0) +
+      //     s +
+      //     (cls ? '</span>' : '');
+      //   this.innerHTML = this.consoleContent + `<span class="cursor"></span>`;
+      //   console.scrollTop = console.scrollHeight;
+      // });
+
+      msg += '\n';
       this.consoleContent =
+        (cls ? `<span class="${cls}">` : '') +
         lines.join('\n') +
         '&nbsp;&nbsp;'.repeat(parseInt(console.dataset['group-level']) ?? 0) +
         msg +
-        '\n';
+        (cls ? '</span>' : '');
 
       updateConsole();
     };
@@ -1153,18 +1219,15 @@ export class CodePlaygroundElement extends HTMLElement {
       },
       debug: (...args) => appendConsole(interpolate(args)),
       dir: (...args) => appendConsole(interpolate(args)),
-      error: (...args) =>
-        appendConsole('<span class="error">' + interpolate(args) + '</span>'),
+      error: (...args) => appendConsole(interpolate(args), 'error'),
       group: (...args) => {
-        if (arguments.length > 0)
-          appendConsole('<span class="group">' + interpolate(args) + '</span>');
+        if (arguments.length > 0) appendConsole(interpolate(args), 'group');
         console.dataset['group-level'] = Number(
           (parseInt(console.dataset['group-level']) ?? 0) + 1
         ).toString();
       },
       groupCollapsed: (...args) => {
-        if (arguments.length > 0)
-          appendConsole('<span class="group">' + interpolate(args) + '</span>');
+        if (arguments.length > 0) appendConsole(interpolate(args), 'group');
         console.dataset['group-level'] = Number(
           (parseInt(console.dataset['group-level']) ?? 0) + 1
         ).toString();
@@ -1174,12 +1237,9 @@ export class CodePlaygroundElement extends HTMLElement {
           (parseInt(console.dataset['group-level']) ?? 0) - 1
         ).toString();
       },
-      info: (...args) =>
-        appendConsole(`<span class="info">${interpolate(args)}</span>`),
-      log: (...args) =>
-        appendConsole(`<span class="log">${interpolate(args)}</span>`),
-      warn: (...args) =>
-        appendConsole(`<span class="warning">${interpolate(args)}</span>`),
+      info: (...args) => appendConsole(interpolate(args), 'info'),
+      log: (...args) => appendConsole(interpolate(args), 'log'),
+      warn: (...args) => appendConsole(interpolate(args), 'warning'),
     };
   }
 
@@ -1239,9 +1299,9 @@ export class CodePlaygroundElement extends HTMLElement {
       `const playground${jsID} = document.getElementById("${this.id}").shadowRoot;` +
       `const console${jsID} = playground${jsID}.host.pseudoConsole();` +
       `const output${jsID} = playground${jsID}.querySelector("div.result > div.output");` +
-      'try{(async function() {\n' +
+      '(async function() {try {\n' +
       script +
-      `\n}());} catch(err) { console${jsID}.catch(err) }`
+      `} catch(err) { console${jsID}.catch(err) }}());`
     );
   }
 
@@ -1255,11 +1315,8 @@ export class CodePlaygroundElement extends HTMLElement {
   }
 
   set activeTab(val: string) {
-    if (val) {
-      this.setAttribute('active-tab', val);
-    } else {
-      this.removeAttribute('active-tab');
-    }
+    if (val) this.setAttribute('active-tab', val);
+    else this.removeAttribute('active-tab');
   }
 
   // 'showlinenumbers' is true if line numbers should be displayed
@@ -1666,9 +1723,10 @@ function escapeHTML(s: string): string {
 }
 
 function sanitizeInput(s: string): string {
+  s = s.trim();
+
   // Remove XML comments, including the <!-- htmlmin:ignore --> used to
   // indicate to terser to skip sections, so as to preserve the formatting.
-
   s = s.replace(/<!--.*-->\n?/g, '');
 
   // Remove lines with only a `//`
@@ -1679,11 +1737,7 @@ function sanitizeInput(s: string): string {
   return s;
 }
 
-function mark(
-  root: ShadowRoot,
-  language: string,
-  arg: string | number | [number, number] | undefined
-) {
+function mark(root: ShadowRoot, language: string, arg: string | undefined) {
   if (arg === undefined) return;
   const editor = root.querySelector(
     `textarea[data-language="${language}"] + .CodeMirror`
@@ -1691,31 +1745,47 @@ function mark(
 
   if (!editor) return;
 
-  for (let i = editor.doc.firstLine; i <= editor.doc.lastLine; i++)
+  // Remove any marked lines
+  for (let i = editor.doc.firstLine(); i <= editor.doc.lastLine(); i++)
     editor.doc.removeLineClass(i, 'wrap', 'marked');
 
-  if (typeof arg === 'string' && /\d+-\d+/.test(arg)) {
-    const [, from, to] = arg.match(/(\d+)-(\d+)/);
-    for (let i = parseInt(from); i <= parseInt(to); i++)
-      editor.doc.addLineClass(i - 1, 'wrap', 'marked');
-    return;
-  }
-
-  let value = arg;
-  try {
-    if (typeof arg === 'string' && arg.length > 0) value = JSON.parse(arg);
-  } catch (e) {}
-
-  if (value === '' || value === 'none') return;
-
-  if (typeof value === 'number') {
-    editor.doc.addLineClass(value - 1, 'wrap', 'marked');
-  } else if (Array.isArray(value)) {
-    for (const line of value)
-      editor.doc.addLineClass(line - 1, 'wrap', 'marked');
+  // Marked the lines
+  // Eithe "5", or "5-6", or "5, 7, 9", or "5-7, 9"
+  if (typeof arg === 'string') {
+    for (let item of arg.split(',')) {
+      item = item.trim();
+      if (item === '' || item === 'none') continue;
+      if (/\d+-\d+/.test(item)) {
+        let [, from, to] = arg.match(/(\d+)-(\d+)/);
+        for (
+          let i = parseInt(from);
+          i <= Math.max(parseInt(from), parseInt(to));
+          i++
+        )
+          editor.doc.addLineClass(i - 1, 'wrap', 'marked');
+        return;
+      } else {
+        editor.doc.addLineClass(parseInt(arg) - 1, 'wrap', 'marked');
+      }
+    }
   }
 }
 
 // Register the tag for the element, only if it isn't already registered
 customElements.get('code-playground') ??
   customElements.define('code-playground', CodePlaygroundElement);
+
+// function echo(s: string, tty: (s: string) => void) {
+//   if (!s) return;
+
+//   let delay = 100 + Math.random() * 50;
+//   setTimeout(
+//     () =>
+//       requestAnimationFrame(() => {
+//         console.log(s[0]);
+//         tty(s[0]);
+//         echo(s.substring(1), tty);
+//       }),
+//     delay
+//   );
+// }
