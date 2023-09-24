@@ -33,6 +33,7 @@ TEMPLATE.innerHTML = `
       Roboto, Oxygen-Sans, Ubuntu, Cantarell,
       "Helvetica Neue", "Source Sans Pro", sans-serif);
     line-height: 1.5;
+    margin-top: 8px;
   }
   :host([hidden]) {
     display: none;
@@ -48,7 +49,11 @@ TEMPLATE.innerHTML = `
     align-items: center;
   }
   :host > div.stack-layout {
-    display: block;
+    display: flex;
+    flex-flow: column;
+    gap: 1em;
+    align-items: flex-start;
+    width: 100%;
   }
   .original-content {
     display: none;
@@ -111,8 +116,9 @@ TEMPLATE.innerHTML = `
     display:  flex;
     flex-flow: column;
   }
-  .stack-layout .source, .stack-layout .result {
-    width: auto;
+  .stack-layout .source, 
+  .stack-layout .result {
+    width: 100%;
     margin: 0;
     background: transparent
   }
@@ -121,7 +127,7 @@ TEMPLATE.innerHTML = `
     padding: 0;
   }
   .stack-layout .result  {
-    margin-top: 2em;
+    margin-top: 0;
   }
   .stack-layout [type=radio]:checked ~ label {
     color: #666;
@@ -129,6 +135,7 @@ TEMPLATE.innerHTML = `
   div.result > pre.console {
     display: none;
     max-height: 50vh;
+    margin: 0;
     padding: 8px 8px 8px 1em;
     border-radius: 8px;
     overflow: auto;
@@ -700,13 +707,7 @@ class CodePlaygroundElement extends HTMLElement {
     }
     set autorun(value) {
         this.setAttribute('autorun', value.toString());
-        const runButton = this.shadowRoot.getElementById('run-button');
-        if (value === 'never') {
-            runButton.classList.add('visible');
-        }
-        else {
-            runButton.classList.remove('visible');
-        }
+        this.updateButtonBar();
     }
     attributeChangedCallback(name, oldValue, newValue) {
         if (oldValue === newValue)
@@ -790,6 +791,7 @@ class CodePlaygroundElement extends HTMLElement {
         if (!this.dirty)
             return;
         this.dirty = false;
+        this.updateButtonBar();
         const shadowRoot = this.shadowRoot;
         // eslint-disable-next-line @typescript-eslint/no-this-alias
         const self = this;
