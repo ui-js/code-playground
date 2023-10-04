@@ -123,7 +123,6 @@ TEMPLATE.innerHTML = `
     background: transparent
   }
   .stack-layout .source {
-    border: var(--ui-border, 1px solid rgba(0, 0, 0, .2));
     padding: 0;
   }
   .stack-layout .result  {
@@ -147,15 +146,29 @@ TEMPLATE.innerHTML = `
     border: var(--ui-border, 1px solid rgba(0, 0, 0, .2));
   }
 
+  div.result > pre.console::selection, 
+  div.result > pre.console *::selection {
+    background: var(--selection-background, var(--base-01, ${base01}));
+    color: var(--selection-color, inherit);
+  }
+
+
   div.result > pre.console.visible {
     display: block;
   }
 
+  @keyframes cursor-blink {
+    0% {
+      opacity: 0;
+    }
+  }
+  
+
   .console .cursor {
-    width: 1ex;
-    height: 1em;
+    display: inline-block;
     color: var(--base-05, ${base05});
     background: var(--base-05, ${base05});
+    animation: cursor-blink 1.5s steps(2) infinite;
   }
 
   .console .sep {
@@ -241,11 +254,11 @@ TEMPLATE.innerHTML = `
     border-radius: 0;
     padding-left: 8px;
     padding-right: 8px;
-    padding-bottom: .5em;
+    padding-bottom: 8px;
     margin-left: -8px;
     margin-right: -8px;
-    margin-bottom: .5em;
-    margin-top: -8px;
+    margin-bottom: 8px;
+    margin-top: 0;
   }
   .stack-layout .tab:last-child {
       margin-bottom: 0;
@@ -369,7 +382,7 @@ TEMPLATE.innerHTML = `
     padding-top: 8px;
   }
   .buttons.visible {
-      display: flex;
+    display: flex;
   }
   .button {
     display: inline-block;
@@ -392,8 +405,8 @@ TEMPLATE.innerHTML = `
     cursor: pointer;
     user-select: none;
     outline: none;
-    background: var(--base-01, ${base01});
     color: var(--base-05, ${base05});
+    background: var(--base-02, ${base02});
     border: 1px solid #111;
   }
   .stack-layout .button {
@@ -412,7 +425,7 @@ TEMPLATE.innerHTML = `
   }
   .button:enabled:hover, .button:enabled:active {
     color: var(--primary-color, #0066ce);
-    border: 1px solid var(--primary-color, #0066ce);
+    border: .5px solid var(--primary-color, #0066ce);
   }
   .button:enabled:active {
     color: #fff;
@@ -428,7 +441,7 @@ TEMPLATE.innerHTML = `
     }
 @media (prefers-color-scheme: dark) {
   :root {
-    --selection-background-color: var(--primary-color);
+    --selection-background: var(--primary-color);
     --selection-color: #fff;
   }
   
@@ -436,6 +449,11 @@ TEMPLATE.innerHTML = `
     outline: var(--primary-color) solid 2px;
   }
   
+  .stack-layout .button {
+    background: var(--base-01, ${base01});
+    color: var(--base-05, ${base05});
+  }
+
 }
     .mathfield {
     display: block;
@@ -636,8 +654,9 @@ class CodePlaygroundElement extends HTMLElement {
         var _a;
         super();
         this.dirty = false;
-        // True if the user has made some changes
+        // True if the user has made some changes to one of the editor
         this.edited = false;
+        this.resetting = false;
         if (!this.id)
             this.id = randomId();
         this.moduleMap = (_a = window['moduleMap']) !== null && _a !== void 0 ? _a : {};
@@ -648,7 +667,7 @@ class CodePlaygroundElement extends HTMLElement {
         container.id = this.containerId;
         const containerContent = `<div class='original-content'><slot name="html"></slot><slot name="css"></slot><slot name="javascript"></slot></div>
 <div class='source'><div class='tabs'></div>
-<div class='buttons visible'>
+<div class='buttons'>
 <button id='reset-button' class='button' disabled><svg aria-hidden="true" focusable="false" data-prefix="far" data-icon="history" class="svg-inline--fa fa-history fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M504 255.532c.252 136.64-111.182 248.372-247.822 248.468-64.014.045-122.373-24.163-166.394-63.942-5.097-4.606-5.3-12.543-.443-17.4l16.96-16.96c4.529-4.529 11.776-4.659 16.555-.395C158.208 436.843 204.848 456 256 456c110.549 0 200-89.468 200-200 0-110.549-89.468-200-200-200-55.52 0-105.708 22.574-141.923 59.043l49.091 48.413c7.641 7.535 2.305 20.544-8.426 20.544H26.412c-6.627 0-12-5.373-12-12V45.443c0-10.651 12.843-16.023 20.426-8.544l45.097 44.474C124.866 36.067 187.15 8 256 8c136.811 0 247.747 110.781 248 247.532zm-167.058 90.173l14.116-19.409c3.898-5.36 2.713-12.865-2.647-16.763L280 259.778V116c0-6.627-5.373-12-12-12h-24c-6.627 0-12 5.373-12 12v168.222l88.179 64.13c5.36 3.897 12.865 2.712 16.763-2.647z"></path></svg>Reset</button>
 <button id='run-button' class='button'><svg aria-hidden="true" focusable="false" data-prefix="far" data-icon="play" class="svg-inline--fa fa-play fa-w-14" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path fill="currentColor" d="M424.4 214.7L72.4 6.6C43.8-10.3 0 6.1 0 47.9V464c0 37.5 40.7 60.1 72.4 41.3l352-208c31.4-18.5 31.5-64.1 0-82.6zM48 453.5v-395c0-4.6 5.1-7.5 9.1-5.2l334.2 197.5c3.9 2.3 3.9 8 0 10.3L57.1 458.7c-4 2.3-9.1-.6-9.1-5.2z"></path></svg>Run</button>
 </div></div>
@@ -740,9 +759,15 @@ class CodePlaygroundElement extends HTMLElement {
     }
     get buttonBarVisibility() {
         var _a;
-        if (this.autorun === 'never')
-            return 'visible';
-        return (_a = this.getAttribute('button-bar-visibility')) !== null && _a !== void 0 ? _a : 'auto';
+        const val = (_a = this.getAttribute('button-bar-visibility')) !== null && _a !== void 0 ? _a : 'auto';
+        if (val === 'auto') {
+            // Auto = show only when needed (some changes have been made to
+            // the content)
+            if (this.edited || this.autorun === 'never')
+                return 'visible';
+            return 'hidden';
+        }
+        return val;
     }
     set buttonBarVisibility(value) {
         this.setAttribute('button-bar-visibility', value);
@@ -766,25 +791,14 @@ class CodePlaygroundElement extends HTMLElement {
         this.updateButtonBar();
     }
     updateButtonBar() {
-        let buttonBarVisibility = this.buttonBarVisibility;
-        if (buttonBarVisibility === 'auto') {
-            // Auto = show only when needed (some changes have been made to
-            // the content)
-            buttonBarVisibility = this.edited ? 'visible' : 'hidden';
-        }
+        const buttonBarVisibility = this.buttonBarVisibility;
         const buttonBar = this.shadowRoot.querySelector('.buttons');
         const resetButton = this.shadowRoot.getElementById('reset-button');
         resetButton.disabled = !this.edited;
         const runButton = this.shadowRoot.getElementById('run-button');
         resetButton.disabled = !this.edited;
-        if (this.autorun === 'never')
-            runButton.classList.add('visible');
-        else
-            runButton.classList.remove('visible');
-        if (buttonBarVisibility === 'visible')
-            buttonBar.classList.add('visible');
-        else if (buttonBarVisibility === 'hidden')
-            buttonBar.classList.remove('visible');
+        runButton.classList.toggle('visible', this.autorun === 'never');
+        buttonBar.classList.toggle('visible', buttonBarVisibility === 'visible');
     }
     // The content of the code section has changed. Rebuild the tabs
     update() {
@@ -1040,6 +1054,8 @@ class CodePlaygroundElement extends HTMLElement {
         }, 500);
     }
     editorContentChanged() {
+        if (this.resetting)
+            return;
         this.edited = true;
         this.updateButtonBar();
         if (this.autorun !== 'never') {
@@ -1052,10 +1068,16 @@ class CodePlaygroundElement extends HTMLElement {
             // lastTab.style.paddingBottom = '0.5em';
             if (this.runTimer)
                 clearTimeout(this.runTimer);
-            this.runTimer = setTimeout(() => this.run(), this.autorun);
+            if (this.autorun === 0)
+                this.run();
+            else
+                this.runTimer = setTimeout(() => this.run(), this.autorun);
         }
     }
     reset() {
+        this.resetting = true;
+        if (this.runTimer)
+            clearTimeout(this.runTimer);
         const slots = this.shadowRoot.querySelectorAll('.original-content slot');
         slots.forEach((slot) => {
             const text = slot
@@ -1070,6 +1092,10 @@ class CodePlaygroundElement extends HTMLElement {
                 mark(this.shadowRoot, slot.name, this.getAttribute(`mark-${slot.name}-line`));
             }
         });
+        this.updateButtonBar();
+        this.run();
+        this.edited = false;
+        this.resetting = false;
     }
     pseudoConsole() {
         const shadowRoot = this.shadowRoot;
@@ -1094,7 +1120,7 @@ class CodePlaygroundElement extends HTMLElement {
             }, 100);
         };
         const appendConsole = (msg, cls) => {
-            var _a, _b, _c;
+            var _a, _b;
             let lines = (_b = (_a = this.consoleContent) === null || _a === void 0 ? void 0 : _a.split('\n')) !== null && _b !== void 0 ? _b : [];
             if (lines.length > CONSOLE_MAX_LINES)
                 lines = lines.slice(lines.length - CONSOLE_MAX_LINES + 1);
@@ -1102,24 +1128,26 @@ class CodePlaygroundElement extends HTMLElement {
             if (this.consoleUpdateTimer)
                 clearTimeout(this.consoleUpdateTimer);
             console.classList.add('visible');
-            // echo(msg + '\n', (s) => {
-            //   this.consoleContent =
-            //     (cls ? `<span class="${cls}">` : '') +
-            //     lines.join('\n') +
-            //     '&nbsp;&nbsp;'.repeat(parseInt(console.dataset['group-level']) ?? 0) +
-            //     s +
-            //     (cls ? '</span>' : '');
-            //   this.innerHTML = this.consoleContent + `<span class="cursor"></span>`;
-            //   console.scrollTop = console.scrollHeight;
-            // });
-            msg += '\n';
-            this.consoleContent =
-                (cls ? `<span class="${cls}">` : '') +
-                    lines.join('\n') +
-                    '&nbsp;&nbsp;'.repeat((_c = parseInt(console.dataset['group-level'])) !== null && _c !== void 0 ? _c : 0) +
-                    msg +
-                    (cls ? '</span>' : '');
-            updateConsole();
+            const that = this;
+            echo(msg + '\n', (s) => {
+                var _a;
+                that.consoleContent =
+                    (cls ? `<span class="${cls}">` : '') +
+                        lines.join('\n') +
+                        '&nbsp;&nbsp;'.repeat((_a = parseInt(console.dataset['group-level'])) !== null && _a !== void 0 ? _a : 0) +
+                        s +
+                        (cls ? '</span>' : '');
+                console.innerHTML = that.consoleContent;
+                console.scrollTop = console.scrollHeight;
+            }, () => updateConsole());
+            // msg += '\n';
+            // this.consoleContent =
+            //   (cls ? `<span class="${cls}">` : '') +
+            //   lines.join('\n') +
+            //   '&nbsp;&nbsp;'.repeat(parseInt(console.dataset['group-level']) ?? 0) +
+            //   msg +
+            //   (cls ? '</span>' : '');
+            // updateConsole();
         };
         return {
             ...window.console,
@@ -1614,19 +1642,23 @@ function mark(root, language, arg) {
 }
 // Register the tag for the element, only if it isn't already registered
 (_a = customElements.get('code-playground')) !== null && _a !== void 0 ? _a : customElements.define('code-playground', CodePlaygroundElement);
-// function echo(s: string, tty: (s: string) => void) {
-//   if (!s) return;
-//   let delay = 100 + Math.random() * 50;
-//   setTimeout(
-//     () =>
-//       requestAnimationFrame(() => {
-//         console.log(s[0]);
-//         tty(s[0]);
-//         echo(s.substring(1), tty);
-//       }),
-//     delay
-//   );
-// }
+function echo(rest, tty, finalize, output) {
+    tty(output !== null && output !== void 0 ? output : '' + rest);
+    finalize();
+    // if (!rest) {
+    //   finalize();
+    //   return;
+    // }
+    // let delay = 4;
+    // setTimeout(
+    //   () =>
+    //     requestAnimationFrame(() => {
+    //       tty((output ?? '') + rest[0]);
+    //       echo(rest.substring(1), tty, finalize, (output ?? '') + rest[0]);
+    //     }),
+    //   delay
+    // );
+}
 
 export { CodePlaygroundElement };
 //# sourceMappingURL=code-playground.js.map
