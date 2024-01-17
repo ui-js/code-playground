@@ -571,12 +571,16 @@ class CodePlaygroundElement extends HTMLElement {
     updateButtonBar() {
         const buttonBarVisibility = this.buttonBarVisibility;
         const buttonBar = this.shadowRoot.querySelector('.__code-playground-button-bar');
+        if (!buttonBar)
+            return;
         const resetButton = this.shadowRoot.getElementById('reset-button');
-        resetButton.disabled = !this.edited;
+        if (resetButton)
+            resetButton.disabled = !this.edited;
         const runButton = this.shadowRoot.getElementById('run-button');
-        resetButton.disabled = !this.edited;
-        runButton.classList.toggle('visible', this.autorun === 'never');
-        buttonBar.classList.toggle('visible', buttonBarVisibility === 'visible');
+        if (runButton)
+            runButton.disabled = !this.edited;
+        runButton === null || runButton === void 0 ? void 0 : runButton.classList.toggle('visible', this.autorun === 'never');
+        buttonBar === null || buttonBar === void 0 ? void 0 : buttonBar.classList.toggle('visible', buttonBarVisibility === 'visible');
     }
     // The content of the code section has changed. Rebuild the editors
     update() {
@@ -584,8 +588,14 @@ class CodePlaygroundElement extends HTMLElement {
         if (!this.dirty)
             return;
         this.dirty = false;
+        // 1. Update the button bar
         this.updateButtonBar();
         const shadowRoot = this.shadowRoot;
+        const editors = shadowRoot.querySelector('.editors');
+        // In some cases, update is triggered but the editors are not yet
+        // available.
+        if (!editors)
+            return;
         // 2. Collect the content of each editor
         const slots = [
             ...shadowRoot.querySelectorAll('.original-content slot'),
@@ -609,8 +619,8 @@ class CodePlaygroundElement extends HTMLElement {
         </div>`;
             }
         }
-        shadowRoot.querySelector('.editors').innerHTML = content;
-        // 4. Setup editors
+        editors.innerHTML = content;
+        // 3. Setup editors
         // @todo: migrate to CodeMirror 6: https://codemirror.net/docs/migration/
         // @todo: bundle CodeMirror library with rollup
         // @todo: replace .fromTextArea() with new EditorView()
@@ -646,7 +656,7 @@ class CodePlaygroundElement extends HTMLElement {
                 editor.on('change', () => this.editorContentChanged());
             });
         }
-        // 6. Run the playground
+        // 4. Run the playground
         if (this.autorun !== 'never')
             this.run();
         // Refresh the codemirror layouts
@@ -659,8 +669,10 @@ class CodePlaygroundElement extends HTMLElement {
     }
     async run() {
         var _a, _b, _c, _d;
-        const section = this.shadowRoot;
-        const result = section.querySelector('.__code-playground-result');
+        const shadowRoot = this.shadowRoot;
+        const result = shadowRoot.querySelector('.__code-playground-result');
+        if (!result)
+            return;
         // Remove all the script tags that might be there.
         // (This includes the script tags that were added by the previous run)
         result
@@ -673,13 +685,13 @@ class CodePlaygroundElement extends HTMLElement {
         this.pseudoConsole.clear();
         // Setup the HTML in 'output'
         let htmlContent = '';
-        const htmlEditor = section.querySelector('textarea[data-language="html"] + .CodeMirror');
+        const htmlEditor = shadowRoot.querySelector('textarea[data-language="html"] + .CodeMirror');
         if (htmlEditor) {
             htmlContent = htmlEditor['CodeMirror'].getValue();
         }
         else {
             htmlContent =
-                (_b = (_a = section.querySelector('textarea[data-language="html"]')) === null || _a === void 0 ? void 0 : _a.value) !== null && _b !== void 0 ? _b : '';
+                (_b = (_a = shadowRoot.querySelector('textarea[data-language="html"]')) === null || _a === void 0 ? void 0 : _a.value) !== null && _b !== void 0 ? _b : '';
         }
         // If the HTML content contains any <script> tags, extract them
         const scriptTags = htmlContent.match(/<script.*>.*?<\/script>/g);
@@ -709,26 +721,28 @@ class CodePlaygroundElement extends HTMLElement {
                     htmlContent = `<link rel="stylesheet" href="${href}"></link>${htmlContent}`;
                 }
             });
-            const outputElement = section.querySelector('div.__code-playground-result > div.__code-playground-output');
-            if (htmlContent)
-                outputElement.classList.add('visible');
-            else
-                outputElement.classList.remove('visible');
-            outputElement.innerHTML = htmlContent;
+            const outputElement = shadowRoot.querySelector('div.__code-playground-result > div.__code-playground-output');
+            if (outputElement) {
+                if (htmlContent)
+                    outputElement.classList.add('visible');
+                else
+                    outputElement.classList.remove('visible');
+                outputElement.innerHTML = htmlContent;
+            }
         }
         catch (e) {
             // If there's a syntax error in the markup, catch it here
             this.pseudoConsole.error(e.message);
         }
         // Add a new script tag
-        const jsEditor = section.querySelector('textarea[data-language="javascript"] + .CodeMirror');
+        const jsEditor = shadowRoot.querySelector('textarea[data-language="javascript"] + .CodeMirror');
         let jsContent = '';
         if (jsEditor) {
             jsContent = jsEditor['CodeMirror'].getValue();
         }
         else {
             jsContent =
-                (_d = (_c = section.querySelector('textarea[data-language="javascript"]')) === null || _c === void 0 ? void 0 : _c.value) !== null && _d !== void 0 ? _d : '';
+                (_d = (_c = shadowRoot.querySelector('textarea[data-language="javascript"]')) === null || _c === void 0 ? void 0 : _c.value) !== null && _d !== void 0 ? _d : '';
         }
         // If there are any custom elements in the HTML wait for them to be
         // defined before executing the script which may refer to them
@@ -796,8 +810,10 @@ class CodePlaygroundElement extends HTMLElement {
                 const editor = this.shadowRoot.querySelector(`textarea[data-language="${slot.name}"] + .CodeMirror`);
                 editor['CodeMirror'].setValue(sanitizeInput(text));
                 if (slot.name === 'javascript')
-                    mark(this.shadowRoot, 'javascript', this.getAttribute('mark-line'));
-                mark(this.shadowRoot, slot.name, this.getAttribute(`mark-${slot.name}-line`));
+                    mark(this.shadowRoot, 'javascript', this.markLine);
+                else {
+                    mark(this.shadowRoot, slot.name, this.getAttribute(`mark-${slot.name}-line`));
+                }
             }
         });
         this.updateButtonBar();
@@ -805,6 +821,9 @@ class CodePlaygroundElement extends HTMLElement {
         this.edited = false;
         this.resetting = false;
         this.updateButtonBar();
+    }
+    get outputElement() {
+        return this.shadowRoot.querySelector('div.__code-playground-result > div.__code-playground-output');
     }
     get pseudoConsole() {
         const shadowRoot = this.shadowRoot;
@@ -918,16 +937,16 @@ class CodePlaygroundElement extends HTMLElement {
             return '';
         const jsID = randomJavaScriptId();
         // Replace document.querySelector.* et al with section.querySelector.*
-        script = script.replace(/([^a-zA-Z0-9_-]?)document\s*\.\s*querySelector\s*\(/g, '$1output' + jsID + '.querySelector(');
-        script = script.replace(/([^a-zA-Z0-9_-]?)document\s*\.\s*querySelectorAll\s*\(/g, '$1output' + jsID + '.querySelectorAll(');
-        script = script.replace(/([^a-zA-Z0-9_-]?)document\s*\.\s*getElementById\s*\(/g, '$1output' + jsID + ".querySelector('#' + ");
+        script = script.replace(/([^a-zA-Z0-9_-]?)document(\s*\.\s*querySelector\s*\()/g, '$1output' + jsID + '$2');
+        script = script.replace(/([^a-zA-Z0-9_-]?)document(\s*\.\s*querySelectorAll\s*\))/g, '$1output' + jsID + '$2');
+        script = script.replace(/([^a-zA-Z0-9_-]?)document(\s*\.\s*getElementById\s*\()/g, '$1output' + jsID + '$2');
         // Replace console.* with pseudoConsole.*
-        script = script.replace(/([^a-zA-Z0-9_-])?console\s*\.\s*/g, '$1console' + jsID + '.');
+        script = script.replace(/([^a-zA-Z0-9_-])?console(\s*\.\s*)/g, '$1console' + jsID + '$2');
         // Extract import (can't be inside a try...catch block)
         const imports = [];
         script = script.replace(/([^a-zA-Z0-9_-]?import.*)('.*'|".*");/g, (match, p1, p2) => {
             imports.push([match, p1, p2.slice(1, p2.length - 1)]);
-            return '';
+            return `/* ${p1}${p2} */`;
         });
         // Important: keep the ${script} on a separate line. The content could
         // be "// a comment" which would result in the script failing to parse
@@ -939,37 +958,51 @@ class CodePlaygroundElement extends HTMLElement {
                 return `${x[1]} "${this.moduleMap[x[2]]}";`;
             return x[0];
         })
-            .join('\n') +
-            `const playground${jsID} = document.getElementById("${this.id}").shadowRoot;` +
-            `const console${jsID} = playground${jsID}.host.pseudoConsole;` +
-            `const output${jsID} = playground${jsID}.querySelector("div.__code-playground-result > div.__code-playground-output");` +
+            .join('') +
+            `const playground${jsID} = document.getElementById("${this.id}").shadowRoot.host;` +
+            `const console${jsID} = playground${jsID}.pseudoConsole;` +
+            `const output${jsID} = playground${jsID}.outputElement;` +
             '(async function() {try {\n' +
             script +
-            `} catch(err) { console${jsID}.catch(err) }}());`);
+            `\n} catch(err) { console${jsID}.catch(err) }}());`);
     }
     //
     // Property/attributes
     //
-    // 'showlinenumbers' is true if line numbers should be displayed
+    // 'showLineNumbers' is true if line numbers should be displayed
     get showLineNumbers() {
-        return (this.hasAttribute('showLineNumbers') ||
-            this.hasAttribute('show-line-numbers'));
+        return (this.hasAttribute('show-line-numbers') ||
+            this.hasAttribute('showLineNumbers'));
     }
     set showLineNumbers(val) {
-        if (val) {
-            this.setAttribute('showLineNumbers', '');
-        }
-        else {
-            this.removeAttribute('showLineNumbers');
-        }
+        this.removeAttribute('showLineNumbers');
+        if (val)
+            this.setAttribute('show-line-numbers', '');
+        else
+            this.removeAttribute('show-line-numbers');
     }
     get markLine() {
-        return this.getAttribute('mark-line') || this.getAttribute('markLine');
+        return (this.getAttribute('mark-line') ||
+            this.getAttribute('markLine') ||
+            this.getAttribute('mark-javascript-line') ||
+            this.getAttribute('markJavaScriptLine'));
     }
     set markLine(val) {
-        this.setAttribute('markLine', val);
+        this.removeAttribute('markLine');
+        this.setAttribute('mark-line', val);
     }
 }
+/** The name of the attributes use the dash convention, as per HTML5 spec:
+ *
+ * > Any namespace-less attribute that is relevant to the element's
+ * > functioning, as determined by the element's author, may be specified on
+ * > an autonomous custom element, so long as the attribute name is
+ * > XML-compatible and contains no ASCII upper alphas.
+ *
+ * However, React properties expect camelCase names, so we also
+ * support those (read-only).
+ *
+ */
 CodePlaygroundElement.attributes = {
     showLineNumbers: 'show-line-numbers',
     buttonBarVisibility: 'button-bar-visibility',

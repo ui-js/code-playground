@@ -437,6 +437,17 @@ export class CodePlaygroundElement extends HTMLElement {
   private edited = false;
   private resetting = false;
 
+  /** The name of the attributes use the dash convention, as per HTML5 spec:
+   *
+   * > Any namespace-less attribute that is relevant to the element's
+   * > functioning, as determined by the element's author, may be specified on
+   * > an autonomous custom element, so long as the attribute name is
+   * > XML-compatible and contains no ASCII upper alphas.
+   *
+   * However, React properties expect camelCase names, so we also
+   * support those (read-only).
+   *
+   */
   static attributes = {
     showLineNumbers: 'show-line-numbers',
     buttonBarVisibility: 'button-bar-visibility',
@@ -639,9 +650,14 @@ export class CodePlaygroundElement extends HTMLElement {
     if (!this.dirty) return;
     this.dirty = false;
 
+    // 1. Update the button bar
     this.updateButtonBar();
 
     const shadowRoot = this.shadowRoot;
+    const editors = shadowRoot.querySelector('.editors');
+    // In some cases, update is triggered but the editors are not yet
+    // available.
+    if (!editors) return;
 
     // 2. Collect the content of each editor
     const slots = [
@@ -670,9 +686,9 @@ export class CodePlaygroundElement extends HTMLElement {
         </div>`;
       }
     }
-    shadowRoot.querySelector('.editors').innerHTML = content;
+    editors.innerHTML = content;
 
-    // 4. Setup editors
+    // 3. Setup editors
     // @todo: migrate to CodeMirror 6: https://codemirror.net/docs/migration/
     // @todo: bundle CodeMirror library with rollup
     // @todo: replace .fromTextArea() with new EditorView()
@@ -717,7 +733,7 @@ export class CodePlaygroundElement extends HTMLElement {
         });
     }
 
-    // 6. Run the playground
+    // 4. Run the playground
     if (this.autorun !== 'never') this.run();
 
     // Refresh the codemirror layouts
@@ -734,8 +750,9 @@ export class CodePlaygroundElement extends HTMLElement {
   }
 
   async run() {
-    const section = this.shadowRoot;
-    const result = section.querySelector('.__code-playground-result');
+    const shadowRoot = this.shadowRoot;
+    const result = shadowRoot.querySelector('.__code-playground-result');
+    if (!result) return;
 
     // Remove all the script tags that might be there.
     // (This includes the script tags that were added by the previous run)
@@ -752,14 +769,14 @@ export class CodePlaygroundElement extends HTMLElement {
 
     // Setup the HTML in 'output'
     let htmlContent = '';
-    const htmlEditor = section.querySelector(
+    const htmlEditor = shadowRoot.querySelector(
       'textarea[data-language="html"] + .CodeMirror'
     );
     if (htmlEditor) {
       htmlContent = htmlEditor['CodeMirror'].getValue();
     } else {
       htmlContent =
-        section.querySelector<HTMLTextAreaElement>(
+        shadowRoot.querySelector<HTMLTextAreaElement>(
           'textarea[data-language="html"]'
         )?.value ?? '';
     }
@@ -794,19 +811,21 @@ export class CodePlaygroundElement extends HTMLElement {
           htmlContent = `<link rel="stylesheet" href="${href}"></link>${htmlContent}`;
         }
       });
-      const outputElement = section.querySelector(
+      const outputElement = shadowRoot.querySelector(
         'div.__code-playground-result > div.__code-playground-output'
       );
-      if (htmlContent) outputElement.classList.add('visible');
-      else outputElement.classList.remove('visible');
-      outputElement.innerHTML = htmlContent;
+      if (outputElement) {
+        if (htmlContent) outputElement.classList.add('visible');
+        else outputElement.classList.remove('visible');
+        outputElement.innerHTML = htmlContent;
+      }
     } catch (e) {
       // If there's a syntax error in the markup, catch it here
       this.pseudoConsole.error(e.message);
     }
 
     // Add a new script tag
-    const jsEditor = section.querySelector(
+    const jsEditor = shadowRoot.querySelector(
       'textarea[data-language="javascript"] + .CodeMirror'
     );
     let jsContent = '';
@@ -814,7 +833,7 @@ export class CodePlaygroundElement extends HTMLElement {
       jsContent = jsEditor['CodeMirror'].getValue();
     } else {
       jsContent =
-        section.querySelector<HTMLTextAreaElement>(
+        shadowRoot.querySelector<HTMLTextAreaElement>(
           'textarea[data-language="javascript"]'
         )?.value ?? '';
     }
@@ -888,13 +907,14 @@ export class CodePlaygroundElement extends HTMLElement {
         editor['CodeMirror'].setValue(sanitizeInput(text));
 
         if (slot.name === 'javascript')
-          mark(this.shadowRoot, 'javascript', this.getAttribute('mark-line'));
-
-        mark(
-          this.shadowRoot,
-          slot.name,
-          this.getAttribute(`mark-${slot.name}-line`)
-        );
+          mark(this.shadowRoot, 'javascript', this.markLine);
+        else {
+          mark(
+            this.shadowRoot,
+            slot.name,
+            this.getAttribute(`mark-${slot.name}-line`)
+          );
+        }
       }
     });
     this.updateButtonBar();
@@ -902,6 +922,12 @@ export class CodePlaygroundElement extends HTMLElement {
     this.edited = false;
     this.resetting = false;
     this.updateButtonBar();
+  }
+
+  get outputElement(): HTMLElement {
+    return this.shadowRoot.querySelector(
+      'div.__code-playground-result > div.__code-playground-output'
+    );
   }
 
   get pseudoConsole(): Console & {
@@ -1028,23 +1054,23 @@ export class CodePlaygroundElement extends HTMLElement {
 
     // Replace document.querySelector.* et al with section.querySelector.*
     script = script.replace(
-      /([^a-zA-Z0-9_-]?)document\s*\.\s*querySelector\s*\(/g,
-      '$1output' + jsID + '.querySelector('
+      /([^a-zA-Z0-9_-]?)document(\s*\.\s*querySelector\s*\()/g,
+      '$1output' + jsID + '$2'
     );
     script = script.replace(
-      /([^a-zA-Z0-9_-]?)document\s*\.\s*querySelectorAll\s*\(/g,
-      '$1output' + jsID + '.querySelectorAll('
+      /([^a-zA-Z0-9_-]?)document(\s*\.\s*querySelectorAll\s*\))/g,
+      '$1output' + jsID + '$2'
     );
 
     script = script.replace(
-      /([^a-zA-Z0-9_-]?)document\s*\.\s*getElementById\s*\(/g,
-      '$1output' + jsID + ".querySelector('#' + "
+      /([^a-zA-Z0-9_-]?)document(\s*\.\s*getElementById\s*\()/g,
+      '$1output' + jsID + '$2'
     );
 
     // Replace console.* with pseudoConsole.*
     script = script.replace(
-      /([^a-zA-Z0-9_-])?console\s*\.\s*/g,
-      '$1console' + jsID + '.'
+      /([^a-zA-Z0-9_-])?console(\s*\.\s*)/g,
+      '$1console' + jsID + '$2'
     );
 
     // Extract import (can't be inside a try...catch block)
@@ -1053,7 +1079,7 @@ export class CodePlaygroundElement extends HTMLElement {
       /([^a-zA-Z0-9_-]?import.*)('.*'|".*");/g,
       (match, p1, p2) => {
         imports.push([match, p1, p2.slice(1, p2.length - 1)]);
-        return '';
+        return `/* ${p1}${p2} */`;
       }
     );
 
@@ -1068,13 +1094,13 @@ export class CodePlaygroundElement extends HTMLElement {
           if (this.moduleMap[x[2]]) return `${x[1]} "${this.moduleMap[x[2]]}";`;
           return x[0];
         })
-        .join('\n') +
-      `const playground${jsID} = document.getElementById("${this.id}").shadowRoot;` +
-      `const console${jsID} = playground${jsID}.host.pseudoConsole;` +
-      `const output${jsID} = playground${jsID}.querySelector("div.__code-playground-result > div.__code-playground-output");` +
+        .join('') +
+      `const playground${jsID} = document.getElementById("${this.id}").shadowRoot.host;` +
+      `const console${jsID} = playground${jsID}.pseudoConsole;` +
+      `const output${jsID} = playground${jsID}.outputElement;` +
       '(async function() {try {\n' +
       script +
-      `} catch(err) { console${jsID}.catch(err) }}());`
+      `\n} catch(err) { console${jsID}.catch(err) }}());`
     );
   }
 
@@ -1082,28 +1108,32 @@ export class CodePlaygroundElement extends HTMLElement {
   // Property/attributes
   //
 
-  // 'showlinenumbers' is true if line numbers should be displayed
+  // 'showLineNumbers' is true if line numbers should be displayed
   get showLineNumbers(): boolean {
     return (
-      this.hasAttribute('showLineNumbers') ||
-      this.hasAttribute('show-line-numbers')
+      this.hasAttribute('show-line-numbers') ||
+      this.hasAttribute('showLineNumbers')
     );
   }
 
   set showLineNumbers(val: boolean) {
-    if (val) {
-      this.setAttribute('showLineNumbers', '');
-    } else {
-      this.removeAttribute('showLineNumbers');
-    }
+    this.removeAttribute('showLineNumbers');
+    if (val) this.setAttribute('show-line-numbers', '');
+    else this.removeAttribute('show-line-numbers');
   }
 
   get markLine(): string {
-    return this.getAttribute('mark-line') || this.getAttribute('markLine');
+    return (
+      this.getAttribute('mark-line') ||
+      this.getAttribute('markLine') ||
+      this.getAttribute('mark-javascript-line') ||
+      this.getAttribute('markJavaScriptLine')
+    );
   }
 
   set markLine(val: string) {
-    this.setAttribute('markLine', val);
+    this.removeAttribute('markLine');
+    this.setAttribute('mark-line', val);
   }
 }
 
