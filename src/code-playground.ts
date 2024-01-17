@@ -618,18 +618,20 @@ export class CodePlaygroundElement extends HTMLElement {
       '.__code-playground-button-bar'
     );
 
+    if (!buttonBar) return;
+
     const resetButton = this.shadowRoot.getElementById(
       'reset-button'
     )! as HTMLButtonElement;
-    resetButton.disabled = !this.edited;
+    if (resetButton) resetButton.disabled = !this.edited;
 
     const runButton = this.shadowRoot.getElementById(
       'run-button'
     )! as HTMLButtonElement;
-    resetButton.disabled = !this.edited;
+    if (runButton) runButton.disabled = !this.edited;
 
-    runButton.classList.toggle('visible', this.autorun === 'never');
-    buttonBar.classList.toggle('visible', buttonBarVisibility === 'visible');
+    runButton?.classList.toggle('visible', this.autorun === 'never');
+    buttonBar?.classList.toggle('visible', buttonBarVisibility === 'visible');
   }
 
   // The content of the code section has changed. Rebuild the editors
