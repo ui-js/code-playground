@@ -486,7 +486,6 @@ export class CodePlaygroundElement extends HTMLElement {
 
   constructor() {
     super();
-    if (!this.id) this.id = randomId();
 
     this.moduleMap = window['moduleMap'] ?? {};
     this.attachShadow({ mode: 'open', delegatesFocus: true });
@@ -506,6 +505,8 @@ export class CodePlaygroundElement extends HTMLElement {
 
   connectedCallback(): void {
     const shadowRoot = this.shadowRoot;
+
+    if (!this.id) this.id = randomId();
 
     shadowRoot.appendChild(TEMPLATE.content.cloneNode(true));
 
