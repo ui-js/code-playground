@@ -926,9 +926,7 @@ export class CodePlaygroundElement extends HTMLElement {
   }
 
   get outputElement(): HTMLElement {
-    return this.shadowRoot.querySelector(
-      'div.__code-playground-result > div.__code-playground-output'
-    );
+    return this.shadowRoot.querySelector('div.__code-playground-output');
   }
 
   get pseudoConsole(): Console & {
@@ -1064,8 +1062,8 @@ export class CodePlaygroundElement extends HTMLElement {
     );
 
     script = script.replace(
-      /([^a-zA-Z0-9_-]?)document(\s*\.\s*getElementById\s*\()/g,
-      '$1output' + jsID + '$2'
+      /([^a-zA-Z0-9_-]?)document(\s*\.\s*)getElementById\s*\(/g,
+      '$1output' + jsID + '$2' + "querySelector('#'+"
     );
 
     // Replace console.* with pseudoConsole.*

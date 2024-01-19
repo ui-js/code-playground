@@ -427,8 +427,6 @@ class CodePlaygroundElement extends HTMLElement {
         // True if the user has made some changes to one of the editor
         this.edited = false;
         this.resetting = false;
-        if (!this.id)
-            this.id = randomId();
         this.moduleMap = (_a = window['moduleMap']) !== null && _a !== void 0 ? _a : {};
         this.attachShadow({ mode: 'open', delegatesFocus: true });
     }
@@ -467,6 +465,8 @@ class CodePlaygroundElement extends HTMLElement {
     }
     connectedCallback() {
         const shadowRoot = this.shadowRoot;
+        if (!this.id)
+            this.id = randomId();
         shadowRoot.appendChild(TEMPLATE.content.cloneNode(true));
         const styleSlot = shadowRoot.querySelector('slot[name=style]');
         if (styleSlot) {
@@ -823,7 +823,7 @@ class CodePlaygroundElement extends HTMLElement {
         this.updateButtonBar();
     }
     get outputElement() {
-        return this.shadowRoot.querySelector('div.__code-playground-result > div.__code-playground-output');
+        return this.shadowRoot.querySelector('div.__code-playground-output');
     }
     get pseudoConsole() {
         const shadowRoot = this.shadowRoot;
@@ -939,7 +939,7 @@ class CodePlaygroundElement extends HTMLElement {
         // Replace document.querySelector.* et al with section.querySelector.*
         script = script.replace(/([^a-zA-Z0-9_-]?)document(\s*\.\s*querySelector\s*\()/g, '$1output' + jsID + '$2');
         script = script.replace(/([^a-zA-Z0-9_-]?)document(\s*\.\s*querySelectorAll\s*\))/g, '$1output' + jsID + '$2');
-        script = script.replace(/([^a-zA-Z0-9_-]?)document(\s*\.\s*getElementById\s*\()/g, '$1output' + jsID + '$2');
+        script = script.replace(/([^a-zA-Z0-9_-]?)document(\s*\.\s*)getElementById\s*\(/g, '$1output' + jsID + '$2' + "querySelector('#'+");
         // Replace console.* with pseudoConsole.*
         script = script.replace(/([^a-zA-Z0-9_-])?console(\s*\.\s*)/g, '$1console' + jsID + '$2');
         // Extract import (can't be inside a try...catch block)
