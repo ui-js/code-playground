@@ -216,14 +216,15 @@ TEMPLATE.innerHTML = `
   }
   .__code-playground-console .error {
     display: block;
-    width: calc(100% - 16px);
+    width: calc(100% + 16px);
     padding-right: 4px;
     padding-top: 8px;
     padding-bottom:8px;
     padding-left: 6px;
-    background: rgba(204, 102, 102, .4);
+    margin: -8px -20px;
+    background: var(--red-800);
     color: white;
-    border-left: 4px solid var(--_semantic-red);
+    border-left: 8px solid var(--_semantic-red);
   }
   .__code-playground-console .warning {
     color: var(--_semantic-orange);
@@ -484,7 +485,7 @@ class CodePlaygroundElement extends HTMLElement {
         const container = document.createElement('div');
         this.containerId = randomId();
         container.id = this.containerId;
-        const containerContent = `<div inert class="original-content" translate="no"><slot name="html"></slot><slot name="css"></slot><slot name="javascript"></slot></div>
+        const containerContent = `<div inert class="original-content" translate="no"><slot name="html"></slot><slot name="javascript"></slot></div>
 
   <div class="__code-playground-container" translate="no">
   
@@ -511,9 +512,7 @@ class CodePlaygroundElement extends HTMLElement {
             .getElementById('reset-button')
             .addEventListener('click', () => this.reset());
         // Track insertion/changes to slots
-        shadowRoot
-            .querySelector('.original-content')
-            .addEventListener('slotchange', () => {
+        shadowRoot.addEventListener('slotchange', () => {
             this.dirty = true;
             requestAnimationFrame(() => this.update());
         });
@@ -564,9 +563,9 @@ class CodePlaygroundElement extends HTMLElement {
         this.setAttribute('buttonBarVisibility', value);
     }
     get buttonBarVisible() {
-        return this.shadowRoot
-            .querySelector('.__code-playground-button-bar')
-            .classList.contains('visible');
+        var _a, _b;
+        return ((_b = (_a = this.shadowRoot
+            .querySelector('.__code-playground-button-bar')) === null || _a === void 0 ? void 0 : _a.classList.contains('visible')) !== null && _b !== void 0 ? _b : false);
     }
     updateButtonBar() {
         const buttonBarVisibility = this.buttonBarVisibility;
@@ -578,7 +577,7 @@ class CodePlaygroundElement extends HTMLElement {
             resetButton.disabled = !this.edited;
         const runButton = this.shadowRoot.getElementById('run-button');
         if (runButton)
-            runButton.disabled = !this.edited;
+            runButton.disabled = false;
         runButton === null || runButton === void 0 ? void 0 : runButton.classList.toggle('visible', this.autorun === 'never');
         buttonBar === null || buttonBar === void 0 ? void 0 : buttonBar.classList.toggle('visible', buttonBarVisibility === 'visible');
     }
@@ -830,12 +829,13 @@ class CodePlaygroundElement extends HTMLElement {
         // root ?? (document.currentScript.getRootNode() as HTMLElement);
         let console = shadowRoot.querySelector('.__code-playground-console');
         if (!console) {
+            const result = shadowRoot.querySelector('.__code-playground-result');
+            if (!result)
+                return { ...window.console, catch: () => { } };
             console = document.createElement('pre');
             console.classList.add('__code-playground-console');
             console.setAttribute('part', 'console');
-            shadowRoot
-                .querySelector('.__code-playground-result')
-                .appendChild(console);
+            result.appendChild(console);
         }
         const updateConsole = () => {
             if (this.consoleUpdateTimer)
