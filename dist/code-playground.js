@@ -941,7 +941,10 @@ class CodePlaygroundElement extends HTMLElement {
         script = script.replace(/([^a-zA-Z0-9_-]?)document(\s*\.\s*querySelectorAll\s*\))/g, '$1output' + jsID + '$2');
         script = script.replace(/([^a-zA-Z0-9_-]?)document(\s*\.\s*)getElementById\s*\(/g, '$1output' + jsID + '$2' + "querySelector('#'+");
         // Replace console.* with pseudoConsole.*
-        script = script.replace(/([^a-zA-Z0-9_-])?console(\s*\.\s*)/g, '$1console' + jsID + '$2');
+        // script = script.replace(
+        //   /([^a-zA-Z0-9_-])?console(\s*\.\s*)/g,
+        //   '$1console' + jsID + '$2'
+        // );
         // Extract import (can't be inside a try...catch block)
         const imports = [];
         script = script.replace(/([^a-zA-Z0-9_-]?import.*)('.*'|".*");/g, (match, p1, p2) => {
@@ -960,11 +963,11 @@ class CodePlaygroundElement extends HTMLElement {
         })
             .join('') +
             `const playground${jsID} = document.getElementById("${this.id}").shadowRoot.host;` +
-            `const console${jsID} = playground${jsID}.pseudoConsole;` +
+            `const console${jsID} = window.console; window.console = playground${jsID}.pseudoConsole;` +
             `const output${jsID} = playground${jsID}.outputElement;` +
             '(async function() {try {\n' +
             script +
-            `\n} catch(err) { console${jsID}.catch(err) }}());`);
+            `\n} catch(err) { console${jsID}.catch(err) }}()); window.console = console${jsID};`);
     }
     //
     // Property/attributes
