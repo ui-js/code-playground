@@ -1378,7 +1378,11 @@ function asString(
         props.push(prop);
       }
     });
-    props = props.filter((x) => !x.startsWith('_'));
+
+    // If this is not a plain literal object, filter out properties that
+    // start with an underscore
+    if (Object.getPrototypeOf(value) !== Object.prototype)
+      props = props.filter((x) => !x.startsWith('_'));
     if (props.length === 0 && typeof props.toString === 'function') {
       const result = value.toString();
       if (result === '[object Object]')

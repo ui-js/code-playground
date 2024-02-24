@@ -421,16 +421,6 @@ TEMPLATE.innerHTML = `
 `;
 const CONSOLE_MAX_LINES = 1000;
 class CodePlaygroundElement extends HTMLElement {
-    constructor() {
-        var _a;
-        super();
-        this.dirty = false;
-        // True if the user has made some changes to one of the editor
-        this.edited = false;
-        this.resetting = false;
-        this.moduleMap = (_a = window['moduleMap']) !== null && _a !== void 0 ? _a : {};
-        this.attachShadow({ mode: 'open', delegatesFocus: true });
-    }
     static get observedAttributes() {
         return Object.values(CodePlaygroundElement.attributes);
     }
@@ -450,6 +440,16 @@ class CodePlaygroundElement extends HTMLElement {
                 .querySelectorAll('textarea + .CodeMirror')
                 .forEach((x) => { var _a; return (_a = x === null || x === void 0 ? void 0 : x['CodeMirror']) === null || _a === void 0 ? void 0 : _a.setLineNumbers(this.showLineNumbers); });
         }
+    }
+    constructor() {
+        var _a;
+        super();
+        this.dirty = false;
+        // True if the user has made some changes to one of the editor
+        this.edited = false;
+        this.resetting = false;
+        this.moduleMap = (_a = window['moduleMap']) !== null && _a !== void 0 ? _a : {};
+        this.attachShadow({ mode: 'open', delegatesFocus: true });
     }
     disconnectedCallback() {
         var _a;
@@ -1224,7 +1224,10 @@ function asString(depth, value, options = {}) {
                 props.push(prop);
             }
         });
-        props = props.filter((x) => !x.startsWith('_'));
+        // If this is not a plain literal object, filter out properties that
+        // start with an underscore
+        if (Object.getPrototypeOf(value) !== Object.prototype)
+            props = props.filter((x) => !x.startsWith('_'));
         if (props.length === 0 && typeof props.toString === 'function') {
             const result = value.toString();
             if (result === '[object Object]')
