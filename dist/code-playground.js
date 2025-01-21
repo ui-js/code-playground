@@ -967,7 +967,7 @@ class CodePlaygroundElement extends HTMLElement {
             `const output${jsID} = playground${jsID}.outputElement;` +
             '(async function() {try {\n' +
             script +
-            `\n} catch(err) { console.catch(err) }}()); window.console = console${jsID};`);
+            `\n} catch(err) { typeof console.catch === 'function' ? console.catch(err) : console.error(err) }}()); window.console = console${jsID};`);
     }
     //
     // Property/attributes
