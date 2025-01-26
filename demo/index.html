@@ -20,6 +20,11 @@
             moduleMap = {
                 mathlive: "//unpkg.com/mathlive?module",
             };
+            setTimeout(() => {
+                document.querySelectorAll('code-playground').forEach((el) => {
+                  el.reset();
+                });
+            }, 2000);
         </script>
         <!-- <div slot="javascript">import MathLive from 'mathlive';
 const mf = MathLive.makeMathField(document.getElementById('mathfield'), 

@@ -63,6 +63,10 @@ TEMPLATE.innerHTML = `
     display: none;
   }
 
+  .editors.hidden {
+    display: none;
+  }
+
   .__code-playground-container {
     display: flex;
     flex-flow: column;
@@ -489,7 +493,7 @@ class CodePlaygroundElement extends HTMLElement {
 
   <div class="__code-playground-container" translate="no">
   
-    <div class="editors" part="editors"></div>
+    <div class="editors hidden" part="editors"></div>
 
     <div class="__code-playground-button-bar" part="button-bar">
       <button id="reset-button" part="button" disabled><svg aria-hidden="true" focusable="false" data-prefix="far" data-icon="history" class="svg-inline--fa fa-history fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M504 255.532c.252 136.64-111.182 248.372-247.822 248.468-64.014.045-122.373-24.163-166.394-63.942-5.097-4.606-5.3-12.543-.443-17.4l16.96-16.96c4.529-4.529 11.776-4.659 16.555-.395C158.208 436.843 204.848 456 256 456c110.549 0 200-89.468 200-200 0-110.549-89.468-200-200-200-55.52 0-105.708 22.574-141.923 59.043l49.091 48.413c7.641 7.535 2.305 20.544-8.426 20.544H26.412c-6.627 0-12-5.373-12-12V45.443c0-10.651 12.843-16.023 20.426-8.544l45.097 44.474C124.866 36.067 187.15 8 256 8c136.811 0 247.747 110.781 248 247.532zm-167.058 90.173l14.116-19.409c3.898-5.36 2.713-12.865-2.647-16.763L280 259.778V116c0-6.627-5.373-12-12-12h-24c-6.627 0-12 5.373-12 12v168.222l88.179 64.13c5.36 3.897 12.865 2.712 16.763-2.647z"></path></svg>Reset</button>
@@ -624,7 +628,7 @@ class CodePlaygroundElement extends HTMLElement {
         // @todo: bundle CodeMirror library with rollup
         // @todo: replace .fromTextArea() with new EditorView()
         // @todo: update CSS (see DOM Structure)
-        if (CodeMirror !== undefined) {
+        if ('CodeMirror' in window && window.CodeMirror !== undefined) {
             this.resizeObserver.disconnect();
             shadowRoot
                 .querySelectorAll('.editors textarea')
@@ -654,20 +658,21 @@ class CodePlaygroundElement extends HTMLElement {
                 mark(shadowRoot, x.dataset.language, this.getAttribute(`mark${toTitleCase(x.dataset.language)}Line`));
                 editor.on('change', () => this.editorContentChanged());
             });
+            editors.classList.remove('hidden');
         }
         // 4. Run the playground
         if (this.autorun !== 'never')
             this.run();
         // Refresh the codemirror layouts
         // (important to get the linenumbers to display correctly)
-        if (CodeMirror !== undefined) {
+        if ('CodeMirror' in window && window.CodeMirror !== undefined) {
             setTimeout(() => shadowRoot
                 .querySelectorAll('textarea + .CodeMirror')
                 .forEach((x) => { var _a; return (_a = x === null || x === void 0 ? void 0 : x['CodeMirror']) === null || _a === void 0 ? void 0 : _a.refresh(); }), 128);
         }
     }
     async run() {
-        var _a, _b, _c, _d;
+        var _a, _b, _c, _d, _e, _f;
         const shadowRoot = this.shadowRoot;
         const result = shadowRoot.querySelector('.__code-playground-result');
         if (!result)
@@ -686,11 +691,11 @@ class CodePlaygroundElement extends HTMLElement {
         let htmlContent = '';
         const htmlEditor = shadowRoot.querySelector('textarea[data-language="html"] + .CodeMirror');
         if (htmlEditor) {
-            htmlContent = htmlEditor['CodeMirror'].getValue();
+            htmlContent = (_a = htmlEditor['CodeMirror']) === null || _a === void 0 ? void 0 : _a.getValue();
         }
         else {
             htmlContent =
-                (_b = (_a = shadowRoot.querySelector('textarea[data-language="html"]')) === null || _a === void 0 ? void 0 : _a.value) !== null && _b !== void 0 ? _b : '';
+                (_c = (_b = shadowRoot.querySelector('textarea[data-language="html"]')) === null || _b === void 0 ? void 0 : _b.value) !== null && _c !== void 0 ? _c : '';
         }
         // If the HTML content contains any <script> tags, extract them
         const scriptTags = htmlContent.match(/<script.*>.*?<\/script>/g);
@@ -737,11 +742,11 @@ class CodePlaygroundElement extends HTMLElement {
         const jsEditor = shadowRoot.querySelector('textarea[data-language="javascript"] + .CodeMirror');
         let jsContent = '';
         if (jsEditor) {
-            jsContent = jsEditor['CodeMirror'].getValue();
+            jsContent = (_d = jsEditor['CodeMirror']) === null || _d === void 0 ? void 0 : _d.getValue();
         }
         else {
             jsContent =
-                (_d = (_c = shadowRoot.querySelector('textarea[data-language="javascript"]')) === null || _c === void 0 ? void 0 : _c.value) !== null && _d !== void 0 ? _d : '';
+                (_f = (_e = shadowRoot.querySelector('textarea[data-language="javascript"]')) === null || _e === void 0 ? void 0 : _e.value) !== null && _f !== void 0 ? _f : '';
         }
         // If there are any custom elements in the HTML wait for them to be
         // defined before executing the script which may refer to them
@@ -801,17 +806,25 @@ class CodePlaygroundElement extends HTMLElement {
             clearTimeout(this.runTimer);
         const slots = this.shadowRoot.querySelectorAll('.original-content slot');
         slots.forEach((slot) => {
+            var _a;
             const text = slot
                 .assignedNodes()
                 .map((node) => node.innerText)
                 .join('');
             if (text) {
                 const editor = this.shadowRoot.querySelector(`textarea[data-language="${slot.name}"] + .CodeMirror`);
-                editor['CodeMirror'].setValue(sanitizeInput(text));
-                if (slot.name === 'javascript')
-                    mark(this.shadowRoot, 'javascript', this.markLine);
+                if (editor) {
+                    (_a = editor['CodeMirror']) === null || _a === void 0 ? void 0 : _a.setValue(sanitizeInput(text));
+                    if (slot.name === 'javascript')
+                        mark(this.shadowRoot, 'javascript', this.markLine);
+                    else {
+                        mark(this.shadowRoot, slot.name, this.getAttribute(`mark-${slot.name}-line`));
+                    }
+                }
                 else {
-                    mark(this.shadowRoot, slot.name, this.getAttribute(`mark-${slot.name}-line`));
+                    const textarea = this.shadowRoot.querySelector(`textarea[data-language="${slot.name}"]`);
+                    if (textarea)
+                        textarea.value = sanitizeInput(text);
                 }
             }
         });
