@@ -20,11 +20,11 @@
             moduleMap = {
                 mathlive: "//unpkg.com/mathlive?module",
             };
-            setTimeout(() => {
-                document.querySelectorAll('code-playground').forEach((el) => {
-                  el.reset();
-                });
-            }, 2000);
+            // setTimeout(() => {
+            //     document.querySelectorAll('code-playground').forEach((el) => {
+            //       el.reset();
+            //     });
+            // }, 2000);
         </script>
         <!-- <div slot="javascript">import MathLive from 'mathlive';
 const mf = MathLive.makeMathField(document.getElementById('mathfield'), 
@@ -42,8 +42,13 @@ console.log(mf.config);
     x=\frac{-b\pm \sqrt{b^2-4ac}}{2a}
 &lt;/math-field&gt;&lt;div class="zebra-zone"&gt;Hello There &lt;/div&gt;</div>
 <div slot="javascript">
+  console.time("timer");
   const result = {_a: 0};
   console.log(result);
+  for (let i = 0; i < 1000000000; i++) {
+    result._a += i;
+  }
+  console.timeEnd("timer", result);
 </div>
     </code-playground>
 

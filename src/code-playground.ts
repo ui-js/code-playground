@@ -442,6 +442,8 @@ export class CodePlaygroundElement extends HTMLElement {
   private edited = false;
   private resetting = false;
 
+  timers: { [key: string]: number } = {};
+
   /** The name of the attributes use the dash convention, as per HTML5 spec:
    *
    * > Any namespace-less attribute that is relevant to the element's
@@ -1051,6 +1053,26 @@ export class CodePlaygroundElement extends HTMLElement {
       info: (...args) => appendConsole(interpolate(args), 'info'),
       log: (...args) => appendConsole(interpolate(args), 'log'),
       warn: (...args) => appendConsole(interpolate(args), 'warning'),
+      time: (label) => {
+        this.timers[label] = Date.now();
+      },
+      timeEnd: (label, ...args) => {
+        if (!this.timers[label]) return appendConsole(interpolate(args), 'log');
+        const time = Date.now() - this.timers[label];
+        if (time > 1000) {
+          // Display two digits after the decimal point
+          return appendConsole(
+            `${interpolate(args)}\n${label}: ${Number(time / 1000).toFixed(
+              2
+            )}s`,
+            'log'
+          );
+        }
+        return appendConsole(
+          `${interpolate(args)}\n${label}: ${time}ms`,
+          'log'
+        );
+      },
     };
   }
 

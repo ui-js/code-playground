@@ -452,6 +452,7 @@ class CodePlaygroundElement extends HTMLElement {
         // True if the user has made some changes to one of the editor
         this.edited = false;
         this.resetting = false;
+        this.timers = {};
         this.moduleMap = (_a = window['moduleMap']) !== null && _a !== void 0 ? _a : {};
         this.attachShadow({ mode: 'open', delegatesFocus: true });
     }
@@ -936,6 +937,19 @@ class CodePlaygroundElement extends HTMLElement {
             info: (...args) => appendConsole(interpolate(args), 'info'),
             log: (...args) => appendConsole(interpolate(args), 'log'),
             warn: (...args) => appendConsole(interpolate(args), 'warning'),
+            time: (label) => {
+                this.timers[label] = Date.now();
+            },
+            timeEnd: (label, ...args) => {
+                if (!this.timers[label])
+                    return appendConsole(interpolate(args), 'log');
+                const time = Date.now() - this.timers[label];
+                if (time > 1000) {
+                    // Display two digits after the decimal point
+                    return appendConsole(`${interpolate(args)}\n${label}: ${Number(time / 1000).toFixed(2)}s`, 'log');
+                }
+                return appendConsole(`${interpolate(args)}\n${label}: ${time}ms`, 'log');
+            },
         };
     }
     /**
