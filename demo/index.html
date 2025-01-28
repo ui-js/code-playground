@@ -36,7 +36,17 @@ const mf = MathLive.makeMathField(document.getElementById('mathfield'),
 });
 console.log(mf.config);
 </div> -->
-        <div slot="html">&lt;script src="//unpkg.com/mathlive"&gt;&lt;/script&gt;
+        <div slot="html">
+          <div class="stack">
+          <div class="row">
+            <button id="evaluate-button">Evaluate</button>
+            <button id="abort-button" disabled>Abort</button>
+          </div>
+          <div id="output"></div>
+        </div>
+
+          
+          &lt;script src="//unpkg.com/mathlive"&gt;&lt;/script&gt;
 &lt;script&gt;console.log('Hello world')&lt;/script&gt;
 &lt;math-field id="mathfield"&gt;
     x=\frac{-b\pm \sqrt{b^2-4ac}}{2a}

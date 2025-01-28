@@ -148,6 +148,77 @@ TEMPLATE.innerHTML = `
     width: calc(100% - 16px);
   }
 
+  .__code-playground-output button {
+    appearance: none;
+    font-family: var(--ui-font-family, -apple-system, BlinkMacSystemFont, "Segoe UI",      Roboto, Oxygen-Sans, Ubuntu, Cantarell,      "Helvetica Neue", "Source Sans Pro"), sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 8px;
+    border: 1px solid var(--base-05, #c5c8c6);
+    color: var(--base-00, #35434e);
+    background: var(--base-07, #ffffff);
+    padding: 4px 16px;
+    min-height: 42px;
+    min-width: 42px;
+    filter: drop-shadow(4px 4px 8px #00000020);
+  }
+
+  .__code-playground-output button:hover {
+    background: var(--base-06, #e0e0e0);
+    background-opacity: .4;
+
+  }
+
+  .__code-playground-output button:active {
+    background: var(--base-07, #ffffff);
+    color: var(--base-00, #35434e);
+    filter: drop-shadow(0px 0px 4px #00000040);
+  }
+
+
+  .__code-playground-output button:disabled, 
+  .__code-playground-output button:disabled:hover {
+    background: var(--base-07, #ffffff);
+    color: var(--base-04, #b4b7b4);
+    filter: none;
+  }
+
+
+
+
+  .__code-playground-output .row {
+    display: flex;
+    flex-flow: row;
+    justify-content: space-between;
+  }
+
+  .__code-playground-output .row > * {
+    flex: .25;
+  }
+
+  .__code-playground-output .row > *:not(:first-child) {
+    margin-left: 8px;
+  }
+
+  .__code-playground-output .row > *:not(:last-child) {
+    margin-right: 8px;
+  }
+
+  .__code-playground-output .row > *:first-child {
+    margin-left: 0;
+  }
+
+  .__code-playground-output .row > *:last-child {
+    margin-right: 0;
+  }
+
+  .__code-playground-output .stack {
+    display: flex;
+    flex-flow: column;
+    margin-top: 8px;
+    margin-bottom: 8px;
+  }
+
 
   .__code-playground-console {
     display: block;
