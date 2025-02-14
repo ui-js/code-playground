@@ -525,8 +525,10 @@ class CodePlaygroundElement extends HTMLElement {
         this.resetting = false;
         this.timers = {};
         this.moduleMap = (_a = window['moduleMap']) !== null && _a !== void 0 ? _a : {};
-        this.contentEditable = 'true';
         this.attachShadow({ mode: 'open', delegatesFocus: true });
+    }
+    get isContentEditable() {
+        return true;
     }
     disconnectedCallback() {
         var _a;
