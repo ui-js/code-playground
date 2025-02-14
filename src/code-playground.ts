@@ -566,6 +566,7 @@ export class CodePlaygroundElement extends HTMLElement {
     super();
 
     this.moduleMap = window['moduleMap'] ?? {};
+    this.contentEditable = 'true';
     this.attachShadow({ mode: 'open', delegatesFocus: true });
   }
 
