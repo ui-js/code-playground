@@ -520,6 +520,7 @@ class CodePlaygroundElement extends HTMLElement {
         var _a;
         super();
         this.dirty = false;
+        this.consoleContent = ''; // Pending content not yet displayed in the console.
         // True if the user has made some changes to one of the editor
         this.edited = false;
         this.resetting = false;
@@ -839,27 +840,7 @@ class CodePlaygroundElement extends HTMLElement {
             // If there's a syntax error in the script, catch it here
             this.pseudoConsole.error(err.message);
         }
-        // Temporarily set the window error handler to catch and report
-        // on syntax errors that may be present in the script
-        const previousErrorHandler = window.onerror;
-        window.onerror = (msg, url, line, _colno, error) => {
-            if (url === window.location.href) {
-                if (line === 0) {
-                    if (typeof (error === null || error === void 0 ? void 0 : error.toString) === 'function') {
-                        this.pseudoConsole.error(msg + error.toString());
-                    }
-                    else {
-                        this.pseudoConsole.error(msg);
-                    }
-                }
-                else {
-                    this.pseudoConsole.error('Line ' + (line - 1) + '\n   ' + msg);
-                }
-            }
-        };
-        setTimeout(() => {
-            window.onerror = previousErrorHandler;
-        }, 500);
+        // Note: Error handling is now done within the scoped script execution
     }
     editorContentChanged() {
         if (this.resetting)
@@ -930,10 +911,14 @@ class CodePlaygroundElement extends HTMLElement {
                 clearTimeout(this.consoleUpdateTimer);
             this.consoleUpdateTimer = setTimeout(() => {
                 console.innerHTML = this.consoleContent;
-                if (this.consoleContent)
+                if (this.consoleContent) {
                     console.classList.add('visible');
-                else
+                    // Debug: force visibility
+                    console.style.display = 'block';
+                }
+                else {
                     console.classList.remove('visible');
+                }
                 console.scrollTop = console.scrollHeight;
             }, 100);
         };
@@ -1009,7 +994,10 @@ class CodePlaygroundElement extends HTMLElement {
                 console.dataset['group-level'] = Number(((_a = parseInt(console.dataset['group-level'])) !== null && _a !== void 0 ? _a : 0) - 1).toString();
             },
             info: (...args) => appendConsole(interpolate(args), 'info'),
-            log: (...args) => appendConsole(interpolate(args), 'log'),
+            log: (...args) => {
+                const msg = interpolate(args);
+                appendConsole(msg, 'log');
+            },
             warn: (...args) => appendConsole(interpolate(args), 'warning'),
             time: (label) => {
                 this.timers[label] = Date.now();
@@ -1056,6 +1044,11 @@ class CodePlaygroundElement extends HTMLElement {
         // be "// a comment" which would result in the script failing to parse
         //
         // Note: the function is marked `async` so that await can be used in its body
+        const pseudoConsole = this.pseudoConsole;
+        const outputElement = this.outputElement;
+        // Store references globally so the script can access them
+        window[`pseudoConsole${jsID}`] = pseudoConsole;
+        window[`outputElement${jsID}`] = outputElement;
         return (imports
             .map((x) => {
             if (this.moduleMap[x[2]])
@@ -1063,12 +1056,52 @@ class CodePlaygroundElement extends HTMLElement {
             return x[0];
         })
             .join('') +
-            `const playground${jsID} = document.getElementById("${this.id}").shadowRoot.host;` +
-            `const console${jsID} = window.console; window.console = playground${jsID}.pseudoConsole;` +
-            `const output${jsID} = playground${jsID}.outputElement;` +
-            '(async function() {try {\n' +
-            script +
-            `\n} catch(err) { typeof console.catch === 'function' ? console.catch(err) : console.error(err) }}()); window.console = console${jsID};`);
+            `
+(function() {
+  const originalConsole = window.console;
+  const pseudoConsole = window.pseudoConsole${jsID};
+  const output${jsID} = window.outputElement${jsID};
+  
+  // Override console methods directly
+  const console = {
+    log: (...args) => pseudoConsole.log(...args),
+    warn: (...args) => pseudoConsole.warn(...args),
+    error: (...args) => pseudoConsole.error(...args),
+    info: (...args) => pseudoConsole.info(...args),
+    debug: (...args) => pseudoConsole.debug(...args),
+    dir: (...args) => pseudoConsole.dir(...args),
+    clear: () => pseudoConsole.clear(),
+    time: (label) => pseudoConsole.time(label),
+    timeEnd: (label) => pseudoConsole.timeEnd(label),
+    group: (...args) => pseudoConsole.group(...args),
+    groupEnd: () => pseudoConsole.groupEnd(),
+    assert: (condition, ...args) => pseudoConsole.assert(condition, ...args)
+  };
+  
+  // Setup error handler for this specific script
+  const originalErrorHandler = window.onerror;
+  window.onerror = function(msg, url, line, col, error) {
+    if (url === window.location.href) {
+      console.error('Uncaught Error: ' + msg);
+      return true; // Prevent default browser error handling
+    }
+    return originalErrorHandler ? originalErrorHandler.call(this, msg, url, line, col, error) : false;
+  };
+  
+  try {
+${script}
+  } catch(scriptError) {
+    console.error(scriptError.message || scriptError);
+  }
+  
+  // Restore error handler after a delay to catch async errors
+  setTimeout(() => {
+    window.onerror = originalErrorHandler;
+  }, 1000);
+  
+  delete window.pseudoConsole${jsID};
+  delete window.outputElement${jsID};
+})();`);
     }
     //
     // Property/attributes
@@ -1138,6 +1171,7 @@ function asString(depth, value, options = {}) {
     if (typeof value === 'boolean') {
         return {
             text: `<span class="boolean">${escapeHTML(String(value))}</span>`,
+            charCount: String(value).length,
             itemCount: 1,
             lineCount: 1,
         };
@@ -1148,6 +1182,7 @@ function asString(depth, value, options = {}) {
     if (typeof value === 'number') {
         return {
             text: `<span class="number">${escapeHTML(String(value))}</span>`,
+            charCount: String(value).length,
             itemCount: 1,
             lineCount: 1,
         };
@@ -1159,12 +1194,14 @@ function asString(depth, value, options = {}) {
         if (options.quote.length === 0) {
             return {
                 text: escapeHTML(value),
+                charCount: String(value).length,
                 itemCount: 1,
                 lineCount: value.split(/\r\n|\r|\n/).length,
             };
         }
         return {
             text: `<span class="string">${escapeHTML(options.quote + value + options.quote)}</span>`,
+            charCount: value.length + options.quote.length * 2,
             itemCount: 1,
             lineCount: value.split(/\r\n|\r|\n/).length,
         };
@@ -1180,6 +1217,7 @@ function asString(depth, value, options = {}) {
             functionValue = escapeHTML(String(value));
         return {
             text: `<span class="function">ƒ  ${functionValue}</span>`,
+            charCount: functionValue.length + 3,
             itemCount: 1,
             lineCount: functionValue.split(/\r\n|\r|\n/).length,
         };
@@ -1190,6 +1228,7 @@ function asString(depth, value, options = {}) {
     if (value === null || value === undefined) {
         return {
             text: `<span class="null">${escapeHTML(String(value))}</span>`,
+            charCount: String(value).length,
             itemCount: 1,
             lineCount: 1,
         };
@@ -1198,6 +1237,7 @@ function asString(depth, value, options = {}) {
     if (depth > 20) {
         return {
             text: '<span class="sep">(...)</span>',
+            charCount: 5,
             itemCount: 1,
             lineCount: 1,
         };
@@ -1209,6 +1249,7 @@ function asString(depth, value, options = {}) {
         if (options.ancestors.includes(value))
             return {
                 text: '<span class="sep">[...]</span>',
+                charCount: 5,
                 itemCount: 1,
                 lineCount: 1,
             };
@@ -1223,6 +1264,7 @@ function asString(depth, value, options = {}) {
             else {
                 result.push({
                     text: '<span class="empty">empty</span>',
+                    charCount: 5,
                     itemCount: 1,
                     lineCount: 1,
                 });
@@ -1230,7 +1272,8 @@ function asString(depth, value, options = {}) {
         }
         const itemCount = result.reduce((acc, val) => acc + val.itemCount, 0);
         const lineCount = result.reduce((acc, val) => Math.max(acc, val.lineCount), 0);
-        if (itemCount > 5 || lineCount > 1) {
+        const charCount = result.reduce((acc, val) => acc + val.charCount + 2, 0);
+        if (charCount > 72 || lineCount > 1) {
             return {
                 text: "<span class='sep'>[</span>\n" +
                     INDENT.repeat(depth + 1) +
@@ -1240,14 +1283,18 @@ function asString(depth, value, options = {}) {
                     '\n' +
                     INDENT.repeat(depth) +
                     "<span class='sep'>]</span>",
+                charCount: result.reduce((acc, val) => acc + val.charCount, 0) +
+                    2 * (itemCount - 1),
                 itemCount,
                 lineCount: 2 + result.reduce((acc, val) => acc + val.lineCount, 0),
             };
         }
+        // Compact serialization on one line
         return {
             text: "<span class='sep'>[</span>" +
                 result.map((x) => x.text).join("<span class='sep'>, </span>") +
                 "<span class='sep'>]</span>",
+            charCount,
             itemCount: Math.max(1, itemCount),
             lineCount: 1,
         };
@@ -1259,6 +1306,7 @@ function asString(depth, value, options = {}) {
         if (options.ancestors.includes(value))
             return {
                 text: '<span class="object">Element...</span>',
+                charCount: 10,
                 itemCount: 1,
                 lineCount: 1,
             };
@@ -1282,6 +1330,7 @@ function asString(depth, value, options = {}) {
         result += `</${value.localName}>`;
         return {
             text: `<span class="object">${escapeHTML(result)}</span>`,
+            charCount: result.length,
             itemCount: 1,
             lineCount: lineCount,
         };
@@ -1293,6 +1342,7 @@ function asString(depth, value, options = {}) {
         if (options.ancestors.includes(value))
             return {
                 text: '<span class="sep">{...}</span>',
+                charCount: 5,
                 itemCount: 1,
                 lineCount: 1,
             };
@@ -1315,6 +1365,7 @@ function asString(depth, value, options = {}) {
             if (s !== '[object Object]')
                 return {
                     text: escapeHTML(s),
+                    charCount: s.length,
                     itemCount: 1,
                     lineCount: 1,
                 };
@@ -1334,11 +1385,13 @@ function asString(depth, value, options = {}) {
             if (result === '[object Object]')
                 return {
                     text: '<span class="sep">{}</span>',
+                    charCount: 2,
                     itemCount: 1,
                     lineCount: 1,
                 };
             return {
                 text: result,
+                charCount: result.length,
                 itemCount: 1,
                 lineCount: result.split(/\r\n|\r|\n/).length,
             };
@@ -1351,12 +1404,14 @@ function asString(depth, value, options = {}) {
                 if (result.itemCount > 500) {
                     result = {
                         text: "<span class='sep'>(...)</span>",
+                        charCount: 5,
                         itemCount: 1,
                         lineCount: 1,
                     };
                 }
                 return {
                     text: `<span class="property">${key}</span><span class='sep'>: </span>${result.text}`,
+                    charCount: result.charCount + key.length + 2,
                     itemCount: result.itemCount,
                     lineCount: result.lineCount,
                 };
@@ -1364,6 +1419,7 @@ function asString(depth, value, options = {}) {
             if (typeof value[key] === 'function') {
                 return {
                     text: `<span class="property">${key}</span></span><span class='sep'>: </span><span class='function'>ƒ (...)</span>`,
+                    charCount: key.length + 2 + 3,
                     itemCount: 1,
                     lineCount: 1,
                 };
@@ -1373,19 +1429,22 @@ function asString(depth, value, options = {}) {
             });
             return {
                 text: `<span class="property">${key}</span></span><span class='sep'>: </span>${result.text}`,
+                charCount: result.charCount + key.length + 2,
                 itemCount: result.itemCount,
                 lineCount: result.lineCount,
             };
         });
         const itemCount = propStrings.reduce((acc, val) => acc + val.itemCount, 0);
         const lineCount = propStrings.reduce((acc, val) => acc + val.lineCount, 0);
-        if (itemCount < 5) {
+        const charCount = propStrings.reduce((acc, val) => acc + val.charCount + 2, 0);
+        if (lineCount === 1 && charCount < 72) {
             return {
                 text: "<span class='sep'>{</span>" +
                     propStrings
                         .map((x) => x.text)
                         .join("</span><span class='sep'>, </span>") +
                     "<span class='sep'>}</span>",
+                charCount,
                 itemCount,
                 lineCount,
             };
@@ -1399,11 +1458,19 @@ function asString(depth, value, options = {}) {
                 '\n' +
                 INDENT.repeat(depth) +
                 "<span class='sep'>}</span>",
+            charCount: propStrings.reduce((acc, val) => acc + val.charCount + 2, 0) +
+                2 * (itemCount - 1),
+            // 2 for the "{ }"
             itemCount: itemCount,
             lineCount: lineCount + 2,
         };
     }
-    return { text: String(value), itemCount: 1, lineCount: 1 };
+    return {
+        text: String(value),
+        charCount: String(value).length,
+        itemCount: 1,
+        lineCount: 1,
+    };
 }
 function interpolate(args) {
     const format = args[0];

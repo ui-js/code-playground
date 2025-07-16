@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Playground Test Environment</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section h2 {
+            color: #555;
+            margin-top: 0;
+        }
+        .controls {
+            margin: 10px 0;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .info {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        code-playground {
+            margin: 15px 0;
+            /* Ensure monospace font for editor and console */
+            --monospace-font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+        }
+        
+        /* Additional monospace font styling for code-playground components */
+        code-playground::part(editor) {
+            font-family: var(--monospace-font-family);
+        }
+        
+        code-playground::part(console) {
+            font-family: var(--monospace-font-family);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Code Playground Test Environment</h1>
+        
+        <div class="info">
+            <strong>Interactive Testing:</strong> This page contains various configurations of the code-playground component for testing different features and behaviors.
+        </div>
+
+        <!-- Debug Console Test -->
+        <div class="test-section">
+            <h2>0. Debug Console Test</h2>
+            <div class="controls">
+                <button onclick="resetPlayground('debug-console')">Reset</button>
+                <button onclick="runPlayground('debug-console')">Run</button>
+                <button onclick="debugConsole()">Debug Console</button>
+            </div>
+            <code-playground id="debug-console" show-line-numbers>
+                <div slot="javascript">// Debug console functionality
+console.log('=== CONSOLE DEBUG TEST ===');
+console.log('Console should now be intercepted!');
+console.log('This message should appear in the pseudo-console below');
+
+// Test different console methods
+console.warn('⚠️ Warning message');
+console.error('❌ Error message');
+console.info('ℹ️ Info message');
+
+// Test objects
+const testObj = { name: 'Test', value: 42, nested: { a: 1, b: 2 } };
+console.log('Object:', testObj);
+
+// Test arrays
+const testArr = [1, 2, 3, 'hello', true, null, undefined];
+console.log('Array:', testArr);
+
+// Test timing
+console.time('test-timer');
+for (let i = 0; i < 1000; i++) {
+    // do nothing
+}
+console.timeEnd('test-timer');
+
+console.log('=== END DEBUG TEST ===');</div>
+            </code-playground>
+        </div>
+
+        <!-- Basic JavaScript Example -->
+        <div class="test-section">
+            <h2>1. Basic JavaScript Console Output</h2>
+            <div class="controls">
+                <button onclick="resetPlayground('basic-js')">Reset</button>
+                <button onclick="runPlayground('basic-js')">Run</button>
+            </div>
+            <code-playground id="basic-js" show-line-numbers>
+                <div slot="javascript">// Simple console test
+console.log('Hello, World!');
+console.log('Testing console output...');
+console.warn('This is a warning');
+console.error('This is an error');
+
+// Test objects and arrays
+const obj = { name: 'Test', value: 42 };
+console.log('Object:', obj);
+
+// Force console to be visible
+setTimeout(() => {
+    console.log('Delayed message');
+}, 100);</div>
+            </code-playground>
+        </div>
+
+        <!-- HTML + JavaScript Interactive -->
+        <div class="test-section">
+            <h2>2. HTML + JavaScript Interactive</h2>
+            <div class="controls">
+                <button onclick="resetPlayground('html-js')">Reset</button>
+                <button onclick="runPlayground('html-js')">Run</button>
+            </div>
+            <code-playground id="html-js" show-line-numbers>
+                <div slot="html">&lt;div id="counter-display"&gt;Count: 0&lt;/div&gt;
+&lt;button onclick="increment()"&gt;Increment&lt;/button&gt;
+&lt;button onclick="decrement()"&gt;Decrement&lt;/button&gt;
+&lt;button onclick="resetCounter()"&gt;Reset&lt;/button&gt;</div>
+                <div slot="javascript">let count = 0;
+
+function updateDisplay() {
+    const display = document.getElementById('counter-display');
+    if (display) {
+        display.textContent = `Count: ${count}`;
+        console.log('Count updated to:', count);
+    }
+}
+
+// Make functions globally accessible for event handlers
+window.increment = function() {
+    count++;
+    updateDisplay();
+};
+
+window.decrement = function() {
+    count--;
+    updateDisplay();
+};
+
+window.resetCounter = function() {
+    count = 0;
+    updateDisplay();
+};
+
+// Initialize display
+console.log('Counter app initialized!');
+updateDisplay();</div>
+            </code-playground>
+        </div>
+
+        <!-- HTML + CSS + JavaScript -->
+        <div class="test-section">
+            <h2>3. HTML + CSS + JavaScript (Styled)</h2>
+            <div class="controls">
+                <button onclick="resetPlayground('full-stack')">Reset</button>
+                <button onclick="runPlayground('full-stack')">Run</button>
+            </div>
+            <code-playground id="full-stack" show-line-numbers layout="tabs">
+                <div slot="html">&lt;div class="app"&gt;
+  &lt;h2&gt;Color Picker&lt;/h2&gt;
+  &lt;div class="color-box" id="colorBox"&gt;&lt;/div&gt;
+  &lt;div class="controls"&gt;
+    &lt;button onclick="randomColor()"&gt;Random Color&lt;/button&gt;
+    &lt;button onclick="resetColor()"&gt;Reset&lt;/button&gt;
+  &lt;/div&gt;
+  &lt;div id="colorInfo"&gt;Current: #ff6b6b&lt;/div&gt;
+&lt;/div&gt;</div>
+                <div slot="css">.app {
+  text-align: center;
+  font-family: Arial, sans-serif;
+  padding: 20px;
+}
+
+.color-box {
+  width: 200px;
+  height: 200px;
+  background-color: #ff6b6b;
+  margin: 20px auto;
+  border-radius: 10px;
+  border: 3px solid #333;
+  transition: all 0.3s ease;
+}
+
+.controls {
+  margin: 20px 0;
+}
+
+.controls button {
+  background: #4ecdc4;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  margin: 0 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.controls button:hover {
+  background: #45b7aa;
+}
+
+#colorInfo {
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+}</div>
+                <div slot="javascript">let currentColor = '#ff6b6b';
+const colorBox = document.getElementById('colorBox');
+const colorInfo = document.getElementById('colorInfo');
+
+// Make functions globally accessible
+window.randomColor = function() {
+    const letters = '0123456789ABCDEF';
+    let color = '#';
+    for (let i = 0; i < 6; i++) {
+        color += letters[Math.floor(Math.random() * 16)];
+    }
+    currentColor = color;
+    updateColor();
+};
+
+window.resetColor = function() {
+    currentColor = '#ff6b6b';
+    updateColor();
+};
+
+function updateColor() {
+    colorBox.style.backgroundColor = currentColor;
+    colorInfo.textContent = `Current: ${currentColor}`;
+    console.log('Color changed to:', currentColor);
+}
+
+// Initialize
+console.log('Color picker initialized with:', currentColor);
+updateColor();</div>
+            </code-playground>
+        </div>
+
+        <!-- Auto-run disabled -->
+        <div class="test-section">
+            <h2>4. Manual Run Mode (autorun=never)</h2>
+            <div class="controls">
+                <button onclick="resetPlayground('manual-run')">Reset</button>
+                <button onclick="runPlayground('manual-run')">Run</button>
+            </div>
+            <code-playground id="manual-run" autorun="never" show-line-numbers>
+                <div slot="javascript">// This won't auto-run - press the Run button!
+console.log('This code requires manual execution');
+console.log('Edit me and press Run to see changes');
+
+for (let i = 1; i <= 5; i++) {
+    console.log(`Loop iteration ${i}`);
+}</div>
+            </code-playground>
+        </div>
+
+        <!-- Performance Test -->
+        <div class="test-section">
+            <h2>5. Performance & Timing Test</h2>
+            <div class="controls">
+                <button onclick="resetPlayground('performance')">Reset</button>
+                <button onclick="runPlayground('performance')">Run</button>
+            </div>
+            <code-playground id="performance" show-line-numbers>
+                <div slot="javascript">// Performance testing
+console.time('fibonacci');
+
+function fibonacci(n) {
+    if (n <= 1) return n;
+    return fibonacci(n - 1) + fibonacci(n - 2);
+}
+
+console.log('Calculating fibonacci(30)...');
+const result = fibonacci(30);
+console.log('Result:', result);
+console.timeEnd('fibonacci');
+
+// Memory usage test
+const largeArray = new Array(1000000).fill(0).map((_, i) => i);
+console.log('Created array with', largeArray.length, 'elements');
+console.log('Sample values:', largeArray.slice(0, 10));</div>
+            </code-playground>
+        </div>
+
+        <!-- Error Handling -->
+        <div class="test-section">
+            <h2>6. Error Handling Test</h2>
+            <div class="controls">
+                <button onclick="resetPlayground('error-test')">Reset</button>
+                <button onclick="runPlayground('error-test')">Run</button>
+            </div>
+            <code-playground id="error-test" show-line-numbers>
+                <div slot="javascript">console.log('Testing error handling...');
+
+try {
+    console.log('This will work fine');
+    
+    // This will cause an error
+    nonExistentFunction();
+} catch (error) {
+    console.error('Caught error:', error.message);
+}
+
+// This will cause an uncaught error
+setTimeout(() => {
+    console.log('About to throw an error...');
+    throw new Error('This is an uncaught error!');
+}, 100);</div>
+            </code-playground>
+        </div>
+    </div>
+
+    <!-- Load the component -->
+    <script type="module" src="./build/code-playground.js"></script>
+    
+    <!-- CodeMirror for syntax highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.11/codemirror.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.11/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.11/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.11/mode/xml/xml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.11/mode/css/css.min.js"></script>
+
+    <script>
+        // Helper functions for testing
+        function resetPlayground(id) {
+            const playground = document.getElementById(id);
+            if (playground) {
+                playground.reset();
+            }
+        }
+
+        function runPlayground(id) {
+            const playground = document.getElementById(id);
+            if (playground) {
+                playground.run();
+            }
+        }
+
+        function debugConsole() {
+            const playground = document.getElementById('debug-console');
+            if (playground) {
+                console.log('=== DEBUG CONSOLE INFO ===');
+                console.log('Playground element:', playground);
+                console.log('Shadow root:', playground.shadowRoot);
+                
+                if (playground.shadowRoot) {
+                    const consoleElement = playground.shadowRoot.querySelector('.__code-playground-console');
+                    console.log('Console element:', consoleElement);
+                    console.log('Console element visible:', consoleElement?.classList.contains('visible'));
+                    console.log('Console element content:', consoleElement?.innerHTML);
+                    
+                    const resultElement = playground.shadowRoot.querySelector('.__code-playground-result');
+                    console.log('Result element:', resultElement);
+                    
+                    // Try to force create console
+                    const pseudoConsole = playground.pseudoConsole;
+                    console.log('PseudoConsole:', pseudoConsole);
+                    
+                    // Test direct call
+                    pseudoConsole.log('DIRECT TEST MESSAGE');
+                    
+                    // Check again after direct call
+                    setTimeout(() => {
+                        const consoleElement2 = playground.shadowRoot.querySelector('.__code-playground-console');
+                        console.log('Console element after direct call:', consoleElement2);
+                        console.log('Console element visible after direct call:', consoleElement2?.classList.contains('visible'));
+                        console.log('Console element content after direct call:', consoleElement2?.innerHTML);
+                    }, 500);
+                }
+                
+                console.log('=== END DEBUG ===');
+            }
+        }
+
+        // Log when components are ready
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Test playground loaded');
+            
+            // Wait for custom elements to be defined
+            customElements.whenDefined('code-playground').then(() => {
+                console.log('code-playground component is ready');
+            });
+        });
+    </script>
+</body>
+</html>
