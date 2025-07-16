@@ -292,16 +292,13 @@ TEMPLATE.innerHTML = `
     color: var(--_base-0b);
   }
   .__code-playground-console .error {
-    display: block;
-    width: calc(100% + 16px);
-    padding-right: 4px;
-    padding-top: 8px;
-    padding-bottom:8px;
-    padding-left: 6px;
-    margin: -8px -20px;
+    display: inline;
+    padding: 4px 8px;
     background: var(--red-800);
     color: white;
-    border-left: 8px solid var(--_semantic-red);
+    border-left: 4px solid var(--_semantic-red);
+    border-radius: 4px;
+    box-decoration-break: clone;
   }
   .__code-playground-console .warning {
     color: var(--_semantic-orange);
@@ -496,8 +493,6 @@ TEMPLATE.innerHTML = `
 </style>
 <slot name="style"></slot>
 `;
-
-const CONSOLE_MAX_LINES = 1000;
 
 export class CodePlaygroundElement extends HTMLElement {
   private dirty = false;
@@ -1034,10 +1029,6 @@ export class CodePlaygroundElement extends HTMLElement {
       }, 100);
     };
     const appendConsole = (msg: string, cls?: string) => {
-      let lines = this.consoleContent?.split('\n') ?? [];
-      if (lines.length > CONSOLE_MAX_LINES)
-        lines = lines.slice(lines.length - CONSOLE_MAX_LINES + 1);
-
       // Simulate a slow teleprinter
       if (this.consoleUpdateTimer) clearTimeout(this.consoleUpdateTimer);
       console.classList.add('visible');
@@ -1045,14 +1036,15 @@ export class CodePlaygroundElement extends HTMLElement {
       echo(
         msg + '\n',
         (s) => {
-          that.consoleContent =
-            (cls ? `<span class="${cls}">` : '') +
-            lines.join('\n') +
-            '&nbsp;&nbsp;'.repeat(
-              parseInt(console.dataset['group-level']) ?? 0
-            ) +
-            s +
-            (cls ? '</span>' : '');
+          // Build the new line with proper styling
+          const indent = '&nbsp;&nbsp;'.repeat(
+            parseInt(console.dataset['group-level']) ?? 0
+          );
+          const newLine =
+            indent + (cls ? `<span class="${cls}">${s}</span>` : s);
+
+          // Append the new line to existing content
+          that.consoleContent = (that.consoleContent || '') + newLine;
           console.innerHTML = that.consoleContent;
           console.scrollTop = console.scrollHeight;
         },
@@ -1082,10 +1074,8 @@ export class CodePlaygroundElement extends HTMLElement {
       catch: (err) => {
         const m = err.stack.split('at ')[1].match(/:([0-9]+):([0-9]+)/) || [];
         appendConsole(
-          '<span class="error">' +
-            (m[1] ? 'Line ' + parseInt(m[1]) + '\n   ' : '') +
-            err.message +
-            '</span>'
+          (m[1] ? 'Line ' + parseInt(m[1]) + '\n   ' : '') + err.message,
+          'error'
         );
       },
       clear: () => {
@@ -1190,11 +1180,11 @@ export class CodePlaygroundElement extends HTMLElement {
 
     const pseudoConsole = this.pseudoConsole;
     const outputElement = this.outputElement;
-    
+
     // Store references globally so the script can access them
     window[`pseudoConsole${jsID}`] = pseudoConsole;
     window[`outputElement${jsID}`] = outputElement;
-    
+
     return (
       imports
         .map((x) => {

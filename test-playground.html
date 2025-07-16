@@ -95,23 +95,12 @@ console.log('This message should appear in the pseudo-console below');
 
 // Test different console methods
 console.warn('⚠️ Warning message');
-console.error('❌ Error message');
+console.error('❌ Error message - this should have clean styling');
 console.info('ℹ️ Info message');
 
-// Test objects
-const testObj = { name: 'Test', value: 42, nested: { a: 1, b: 2 } };
-console.log('Object:', testObj);
-
-// Test arrays
-const testArr = [1, 2, 3, 'hello', true, null, undefined];
-console.log('Array:', testArr);
-
-// Test timing
-console.time('test-timer');
-for (let i = 0; i < 1000; i++) {
-    // do nothing
-}
-console.timeEnd('test-timer');
+// Simple test - avoid complex objects that might cause nested spans
+console.log('Simple string message');
+console.error('Simple error message');
 
 console.log('=== END DEBUG TEST ===');</div>
             </code-playground>

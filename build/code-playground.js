@@ -290,16 +290,13 @@ TEMPLATE.innerHTML = `
     color: var(--_base-0b);
   }
   .__code-playground-console .error {
-    display: block;
-    width: calc(100% + 16px);
-    padding-right: 4px;
-    padding-top: 8px;
-    padding-bottom:8px;
-    padding-left: 6px;
-    margin: -8px -20px;
+    display: inline;
+    padding: 4px 8px;
     background: var(--red-800);
     color: white;
-    border-left: 8px solid var(--_semantic-red);
+    border-left: 4px solid var(--_semantic-red);
+    border-radius: 4px;
+    box-decoration-break: clone;
   }
   .__code-playground-console .warning {
     color: var(--_semantic-orange);
@@ -494,7 +491,6 @@ TEMPLATE.innerHTML = `
 </style>
 <slot name="style"></slot>
 `;
-const CONSOLE_MAX_LINES = 1000;
 class CodePlaygroundElement extends HTMLElement {
     static get observedAttributes() {
         return Object.values(CodePlaygroundElement.attributes);
@@ -923,10 +919,6 @@ class CodePlaygroundElement extends HTMLElement {
             }, 100);
         };
         const appendConsole = (msg, cls) => {
-            var _a, _b;
-            let lines = (_b = (_a = this.consoleContent) === null || _a === void 0 ? void 0 : _a.split('\n')) !== null && _b !== void 0 ? _b : [];
-            if (lines.length > CONSOLE_MAX_LINES)
-                lines = lines.slice(lines.length - CONSOLE_MAX_LINES + 1);
             // Simulate a slow teleprinter
             if (this.consoleUpdateTimer)
                 clearTimeout(this.consoleUpdateTimer);
@@ -934,12 +926,11 @@ class CodePlaygroundElement extends HTMLElement {
             const that = this;
             echo(msg + '\n', (s) => {
                 var _a;
-                that.consoleContent =
-                    (cls ? `<span class="${cls}">` : '') +
-                        lines.join('\n') +
-                        '&nbsp;&nbsp;'.repeat((_a = parseInt(console.dataset['group-level'])) !== null && _a !== void 0 ? _a : 0) +
-                        s +
-                        (cls ? '</span>' : '');
+                // Build the new line with proper styling
+                const indent = '&nbsp;&nbsp;'.repeat((_a = parseInt(console.dataset['group-level'])) !== null && _a !== void 0 ? _a : 0);
+                const newLine = indent + (cls ? `<span class="${cls}">${s}</span>` : s);
+                // Append the new line to existing content
+                that.consoleContent = (that.consoleContent || '') + newLine;
                 console.innerHTML = that.consoleContent;
                 console.scrollTop = console.scrollHeight;
             }, () => updateConsole());
@@ -965,10 +956,8 @@ class CodePlaygroundElement extends HTMLElement {
             // non-standard
             catch: (err) => {
                 const m = err.stack.split('at ')[1].match(/:([0-9]+):([0-9]+)/) || [];
-                appendConsole('<span class="error">' +
-                    (m[1] ? 'Line ' + parseInt(m[1]) + '\n   ' : '') +
-                    err.message +
-                    '</span>');
+                appendConsole((m[1] ? 'Line ' + parseInt(m[1]) + '\n   ' : '') +
+                    err.message, 'error');
             },
             clear: () => {
                 this.consoleContent = '';
