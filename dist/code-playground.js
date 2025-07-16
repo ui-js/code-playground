@@ -956,8 +956,7 @@ class CodePlaygroundElement extends HTMLElement {
             // non-standard
             catch: (err) => {
                 const m = err.stack.split('at ')[1].match(/:([0-9]+):([0-9]+)/) || [];
-                appendConsole((m[1] ? 'Line ' + parseInt(m[1]) + '\n   ' : '') +
-                    err.message, 'error');
+                appendConsole((m[1] ? 'Line ' + parseInt(m[1]) + '\n   ' : '') + err.message, 'error');
             },
             clear: () => {
                 this.consoleContent = '';
