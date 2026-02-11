@@ -501,7 +501,6 @@ export class CodePlaygroundElement extends HTMLElement {
   private resizeObserver: ResizeObserver;
   private runTimer: number;
 
-  private consoleUpdateTimer: number;
   private consoleContent: string = ''; // Pending content not yet displayed in the console.
 
   // True if the user has made some changes to one of the editor
@@ -576,7 +575,6 @@ export class CodePlaygroundElement extends HTMLElement {
     this.shadowRoot.innerHTML = '';
     this.dirty = true;
     if (this.runTimer) clearTimeout(this.runTimer);
-    if (this.consoleUpdateTimer) clearTimeout(this.consoleUpdateTimer);
     this.edited = false;
     this.resetting = false;
   }
@@ -1028,22 +1026,17 @@ export class CodePlaygroundElement extends HTMLElement {
     }
     const that = this;
     const updateConsole = () => {
-      if (this.consoleUpdateTimer) clearTimeout(this.consoleUpdateTimer);
-      this.consoleUpdateTimer = setTimeout(() => {
-        console.innerHTML = this.consoleContent;
-        if (this.consoleContent) {
-          console.classList.add('visible');
-          // Debug: force visibility
-          console.style.display = 'block';
-        } else {
-          console.classList.remove('visible');
-        }
-        console.scrollTop = console.scrollHeight;
-      }, 100);
+      console.innerHTML = this.consoleContent;
+      if (this.consoleContent) {
+        console.classList.add('visible');
+        // Debug: force visibility
+        console.style.display = 'block';
+      } else {
+        console.classList.remove('visible');
+      }
+      console.scrollTop = console.scrollHeight;
     };
     const appendConsole = (msg: string, cls?: string) => {
-      // Simulate a slow teleprinter
-      if (this.consoleUpdateTimer) clearTimeout(this.consoleUpdateTimer);
       console.classList.add('visible');
       echo(
         msg + '\n',
@@ -1253,6 +1246,7 @@ export class CodePlaygroundElement extends HTMLElement {
   
   // Override console methods directly
   const console = {
+    ...originalConsole,
     log: (...args) => pseudoConsole.log(...args),
     warn: (...args) => pseudoConsole.warn(...args),
     error: (...args) => pseudoConsole.error(...args),
@@ -1267,8 +1261,6 @@ export class CodePlaygroundElement extends HTMLElement {
     assert: (condition, ...args) => pseudoConsole.assert(condition, ...args)
   };
 
-  window.console = console;
-
   // Create wrapped versions of async functions that catch errors
   const errorCatcher = window.errorCatcher${jsID};
   const originalSetTimeout = window.setTimeout;
@@ -1276,16 +1268,14 @@ export class CodePlaygroundElement extends HTMLElement {
   
   // Override setTimeout and setInterval to wrap callbacks
   window.setTimeout = function(callback, delay, ...args) {
-    if (typeof callback === 'function') {
+    if (typeof callback === 'function') 
       callback = errorCatcher(callback);
-    }
     return originalSetTimeout.call(this, callback, delay, ...args);
   };
   
   window.setInterval = function(callback, delay, ...args) {
-    if (typeof callback === 'function') {
+    if (typeof callback === 'function') 
       callback = errorCatcher(callback);
-    }
     return originalSetInterval.call(this, callback, delay, ...args);
   };
   
@@ -1302,7 +1292,6 @@ ${script}
     delete window.pseudoConsole${jsID};
     delete window.outputElement${jsID};
     delete window.errorCatcher${jsID};
-    window.console = originalConsole;
   }, 1000);
 })();`
     );
