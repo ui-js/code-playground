@@ -638,6 +638,15 @@ class CodePlaygroundElement extends HTMLElement {
     set buttonBarVisibility(value) {
         this.setAttribute('buttonBarVisibility', value);
     }
+    get compactWidth() {
+        const value = this.getAttribute('compact-width');
+        if (value && isFinite(parseFloat(value)))
+            return Math.floor(parseFloat(value));
+        return 80; // Default compact width threshold
+    }
+    set compactWidth(value) {
+        this.setAttribute('compact-width', Math.floor(value).toString());
+    }
     get buttonBarVisible() {
         var _a, _b;
         return ((_b = (_a = this.shadowRoot
@@ -902,6 +911,7 @@ class CodePlaygroundElement extends HTMLElement {
             console.setAttribute('part', 'console');
             result.appendChild(console);
         }
+        const that = this;
         const updateConsole = () => {
             if (this.consoleUpdateTimer)
                 clearTimeout(this.consoleUpdateTimer);
@@ -923,7 +933,6 @@ class CodePlaygroundElement extends HTMLElement {
             if (this.consoleUpdateTimer)
                 clearTimeout(this.consoleUpdateTimer);
             console.classList.add('visible');
-            const that = this;
             echo(msg + '\n', (s) => {
                 var _a;
                 // Build the new line with proper styling
@@ -947,7 +956,7 @@ class CodePlaygroundElement extends HTMLElement {
             ...window.console,
             assert: (condition, ...args) => {
                 if (!condition) {
-                    let msg = interpolate(args);
+                    let msg = interpolate(args, { maxWidth: that.compactWidth });
                     if (msg.length > 0)
                         msg = ':\n   ' + msg;
                     appendConsole('Assertion failed' + msg, 'error');
@@ -962,43 +971,47 @@ class CodePlaygroundElement extends HTMLElement {
                 this.consoleContent = '';
                 updateConsole();
             },
-            debug: (...args) => appendConsole(interpolate(args)),
-            dir: (...args) => appendConsole(interpolate(args)),
-            error: (...args) => appendConsole(interpolate(args), 'error'),
+            debug: (...args) => appendConsole(interpolate(args, { maxWidth: that.compactWidth })),
+            dir: (...args) => appendConsole(interpolate(args, { maxWidth: that.compactWidth })),
+            error: (...args) => appendConsole(interpolate(args, { maxWidth: that.compactWidth }), 'error'),
             group: (...args) => {
                 var _a;
                 if (arguments.length > 0)
-                    appendConsole(interpolate(args), 'group');
+                    appendConsole(interpolate(args, { maxWidth: that.compactWidth }), 'group');
                 console.dataset['group-level'] = Number(((_a = parseInt(console.dataset['group-level'])) !== null && _a !== void 0 ? _a : 0) + 1).toString();
             },
             groupCollapsed: (...args) => {
                 var _a;
                 if (arguments.length > 0)
-                    appendConsole(interpolate(args), 'group');
+                    appendConsole(interpolate(args, { maxWidth: that.compactWidth }), 'group');
                 console.dataset['group-level'] = Number(((_a = parseInt(console.dataset['group-level'])) !== null && _a !== void 0 ? _a : 0) + 1).toString();
             },
             groupEnd: () => {
                 var _a;
                 console.dataset['group-level'] = Number(((_a = parseInt(console.dataset['group-level'])) !== null && _a !== void 0 ? _a : 0) - 1).toString();
             },
-            info: (...args) => appendConsole(interpolate(args), 'info'),
+            info: (...args) => appendConsole(interpolate(args, { maxWidth: that.compactWidth }), 'info'),
             log: (...args) => {
-                const msg = interpolate(args);
+                const msg = interpolate(args, { maxWidth: that.compactWidth });
                 appendConsole(msg, 'log');
             },
-            warn: (...args) => appendConsole(interpolate(args), 'warning'),
+            warn: (...args) => appendConsole(interpolate(args, { maxWidth: that.compactWidth }), 'warning'),
             time: (label) => {
                 this.timers[label] = Date.now();
             },
             timeEnd: (label, ...args) => {
                 if (!this.timers[label])
-                    return appendConsole(interpolate(args), 'log');
+                    return appendConsole(interpolate(args, { maxWidth: that.compactWidth }), 'log');
                 const time = Date.now() - this.timers[label];
                 if (time > 1000) {
                     // Display two digits after the decimal point
-                    return appendConsole(`${interpolate(args)}\n${label}: ${Number(time / 1000).toFixed(2)}s`, 'log');
+                    return appendConsole(`${interpolate(args, {
+                        maxWidth: that.compactWidth,
+                    })}\n${label}: ${Number(time / 1000).toFixed(2)}s`, 'log');
                 }
-                return appendConsole(`${interpolate(args)}\n${label}: ${time}ms`, 'log');
+                return appendConsole(`${interpolate(args, {
+                    maxWidth: that.compactWidth,
+                })}\n${label}: ${time}ms`, 'log');
             },
         };
     }
@@ -1037,6 +1050,19 @@ class CodePlaygroundElement extends HTMLElement {
         // Store references globally so the script can access them
         window[`pseudoConsole${jsID}`] = pseudoConsole;
         window[`outputElement${jsID}`] = outputElement;
+        // Create error catching wrapper function for this playground
+        window[`errorCatcher${jsID}`] = function (fn) {
+            return function (...args) {
+                try {
+                    return fn.apply(this, args);
+                }
+                catch (error) {
+                    pseudoConsole.error('Uncaught Error: ' + (error.message || error));
+                    // Don't re-throw - we've handled it in the pseudo-console
+                    return undefined;
+                }
+            };
+        };
         return (imports
             .map((x) => {
             if (this.moduleMap[x[2]])
@@ -1065,15 +1091,27 @@ class CodePlaygroundElement extends HTMLElement {
     groupEnd: () => pseudoConsole.groupEnd(),
     assert: (condition, ...args) => pseudoConsole.assert(condition, ...args)
   };
+
+  window.console = console;
+
+  // Create wrapped versions of async functions that catch errors
+  const errorCatcher = window.errorCatcher${jsID};
+  const originalSetTimeout = window.setTimeout;
+  const originalSetInterval = window.setInterval;
   
-  // Setup error handler for this specific script
-  const originalErrorHandler = window.onerror;
-  window.onerror = function(msg, url, line, col, error) {
-    if (url === window.location.href) {
-      console.error('Uncaught Error: ' + msg);
-      return true; // Prevent default browser error handling
+  // Override setTimeout and setInterval to wrap callbacks
+  window.setTimeout = function(callback, delay, ...args) {
+    if (typeof callback === 'function') {
+      callback = errorCatcher(callback);
     }
-    return originalErrorHandler ? originalErrorHandler.call(this, msg, url, line, col, error) : false;
+    return originalSetTimeout.call(this, callback, delay, ...args);
+  };
+  
+  window.setInterval = function(callback, delay, ...args) {
+    if (typeof callback === 'function') {
+      callback = errorCatcher(callback);
+    }
+    return originalSetInterval.call(this, callback, delay, ...args);
   };
   
   try {
@@ -1082,13 +1120,15 @@ ${script}
     console.error(scriptError.message || scriptError);
   }
   
-  // Restore error handler after a delay to catch async errors
-  setTimeout(() => {
-    window.onerror = originalErrorHandler;
+  // Restore original functions and clean up
+  originalSetTimeout(() => {
+    window.setTimeout = originalSetTimeout;
+    window.setInterval = originalSetInterval;
+    delete window.pseudoConsole${jsID};
+    delete window.outputElement${jsID};
+    delete window.errorCatcher${jsID};
+    window.console = originalConsole;
   }, 1000);
-  
-  delete window.pseudoConsole${jsID};
-  delete window.outputElement${jsID};
 })();`);
     }
     //
@@ -1135,6 +1175,7 @@ CodePlaygroundElement.attributes = {
     markLine: 'mark-line',
     markJavascriptLine: 'mark-javascript-line',
     markHtmlLine: 'mark-html-line',
+    compactWidth: 'compact-width',
 };
 function randomId() {
     return ('i' +
@@ -1150,9 +1191,10 @@ const INDENT = '  ';
  * Convert a basic type or an object into a HTML string
  */
 function asString(depth, value, options = {}) {
-    var _a, _b;
+    var _a, _b, _c;
     (_a = options.quote) !== null && _a !== void 0 ? _a : (options.quote = '"');
     (_b = options.ancestors) !== null && _b !== void 0 ? _b : (options.ancestors = []);
+    (_c = options.maxCompactWidth) !== null && _c !== void 0 ? _c : (options.maxCompactWidth = 80); // Configurable threshold, default 80 chars
     //
     // BOOLEAN
     //
@@ -1247,6 +1289,7 @@ function asString(depth, value, options = {}) {
             if (Object.keys(value).includes(Number(i).toString())) {
                 result.push(asString(depth + 1, value[i], {
                     ancestors: [...options.ancestors, value],
+                    maxCompactWidth: options.maxCompactWidth,
                 }));
             }
             else {
@@ -1261,7 +1304,7 @@ function asString(depth, value, options = {}) {
         const itemCount = result.reduce((acc, val) => acc + val.itemCount, 0);
         const lineCount = result.reduce((acc, val) => Math.max(acc, val.lineCount), 0);
         const charCount = result.reduce((acc, val) => acc + val.charCount + 2, 0);
-        if (charCount > 72 || lineCount > 1) {
+        if (charCount > options.maxCompactWidth || lineCount > 1) {
             return {
                 text: "<span class='sep'>[</span>\n" +
                     INDENT.repeat(depth + 1) +
@@ -1338,6 +1381,7 @@ function asString(depth, value, options = {}) {
             const kv = Object.fromEntries(value);
             const result = asString(depth, kv, {
                 ancestors: [...options.ancestors, value],
+                maxCompactWidth: options.maxCompactWidth,
             });
             return { ...result, text: '<span class=object>Map</span>' + result.text };
         }
@@ -1345,6 +1389,7 @@ function asString(depth, value, options = {}) {
             const elts = Array.from(value);
             const result = asString(depth, elts, {
                 ancestors: [...options.ancestors, value],
+                maxCompactWidth: options.maxCompactWidth,
             });
             return { ...result, text: '<span class=object>Set</span>' + result.text };
         }
@@ -1388,6 +1433,7 @@ function asString(depth, value, options = {}) {
             if (typeof value[key] === 'object' && value[key] !== null) {
                 let result = asString(depth + 1, value[key], {
                     ancestors: [...options.ancestors, value],
+                    maxCompactWidth: options.maxCompactWidth,
                 });
                 if (result.itemCount > 500) {
                     result = {
@@ -1414,9 +1460,10 @@ function asString(depth, value, options = {}) {
             }
             const result = asString(depth + 1, value[key], {
                 ancestors: [...options.ancestors, value],
+                maxCompactWidth: options.maxCompactWidth,
             });
             return {
-                text: `<span class="property">${key}</span></span><span class='sep'>: </span>${result.text}`,
+                text: `<span class="property">${key}</span><span class='sep'>: </span>${result.text}`,
                 charCount: result.charCount + key.length + 2,
                 itemCount: result.itemCount,
                 lineCount: result.lineCount,
@@ -1424,8 +1471,9 @@ function asString(depth, value, options = {}) {
         });
         const itemCount = propStrings.reduce((acc, val) => acc + val.itemCount, 0);
         const lineCount = propStrings.reduce((acc, val) => acc + val.lineCount, 0);
-        const charCount = propStrings.reduce((acc, val) => acc + val.charCount + 2, 0);
-        if (lineCount === 1 && charCount < 72) {
+        const charCount = propStrings.reduce((acc, val) => acc + val.charCount, 0) +
+            2 * (itemCount - 1); // 2 for the ", "
+        if (lineCount === 1 && charCount <= options.maxCompactWidth) {
             return {
                 text: "<span class='sep'>{</span>" +
                     propStrings
@@ -1460,14 +1508,16 @@ function asString(depth, value, options = {}) {
         lineCount: 1,
     };
 }
-function interpolate(args) {
+function interpolate(args, options = { maxWidth: 80 }) {
     const format = args[0];
     const rest = args.slice(1);
     if (typeof format === 'string' && format.includes('%') && rest.length) {
         const string = format.replace(/(%[oscdif]|%(\d*)\.(\d*)[dif])/g, (all, key, width = '', dp) => {
             if (key === '%o') {
                 // object
-                return asString(0, rest.shift()).text;
+                return asString(0, rest.shift(), {
+                    maxCompactWidth: options.maxWidth,
+                }).text;
             }
             if (key === '%s') {
                 // string
@@ -1492,11 +1542,15 @@ function interpolate(args) {
             if (width === '') {
                 return res;
             }
-            return asString(0, res).text.padStart(width, ' ');
+            return asString(0, res, {
+                maxCompactWidth: options.maxWidth,
+            }).text.padStart(width, ' ');
         });
         return string;
     }
-    return args.map((x) => asString(0, x, { quote: '' }).text).join(' ');
+    return args
+        .map((x) => asString(0, x, { quote: '', maxCompactWidth: options.maxWidth }).text)
+        .join(' ');
 }
 function escapeHTML(s) {
     return s

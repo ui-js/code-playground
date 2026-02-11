@@ -35,9 +35,11 @@
         button {
             background: #007bff;
             color: white;
+            font-weight: 400;
+            font-size: 1rem;
             border: none;
             padding: 8px 16px;
-            border-radius: 4px;
+            border-radius: 8px;
             cursor: pointer;
             margin-right: 10px;
         }
@@ -79,32 +81,6 @@
             <strong>Interactive Testing:</strong> This page contains various configurations of the code-playground component for testing different features and behaviors.
         </div>
 
-        <!-- Debug Console Test -->
-        <div class="test-section">
-            <h2>0. Debug Console Test</h2>
-            <div class="controls">
-                <button onclick="resetPlayground('debug-console')">Reset</button>
-                <button onclick="runPlayground('debug-console')">Run</button>
-                <button onclick="debugConsole()">Debug Console</button>
-            </div>
-            <code-playground id="debug-console" show-line-numbers>
-                <div slot="javascript">// Debug console functionality
-console.log('=== CONSOLE DEBUG TEST ===');
-console.log('Console should now be intercepted!');
-console.log('This message should appear in the pseudo-console below');
-
-// Test different console methods
-console.warn('⚠️ Warning message');
-console.error('❌ Error message - this should have clean styling');
-console.info('ℹ️ Info message');
-
-// Simple test - avoid complex objects that might cause nested spans
-console.log('Simple string message');
-console.error('Simple error message');
-
-console.log('=== END DEBUG TEST ===');</div>
-            </code-playground>
-        </div>
 
         <!-- Basic JavaScript Example -->
         <div class="test-section">
@@ -139,10 +115,10 @@ setTimeout(() => {
                 <button onclick="runPlayground('html-js')">Run</button>
             </div>
             <code-playground id="html-js" show-line-numbers>
-                <div slot="html">&lt;div id="counter-display"&gt;Count: 0&lt;/div&gt;
+                <div slot="html">&lt;div id="counter-display"&gt;Count: 0&lt;/div&gt;&lt;div class="controls"&gt;
 &lt;button onclick="increment()"&gt;Increment&lt;/button&gt;
 &lt;button onclick="decrement()"&gt;Decrement&lt;/button&gt;
-&lt;button onclick="resetCounter()"&gt;Reset&lt;/button&gt;</div>
+&lt;button onclick="resetCounter()"&gt;Reset&lt;/button&gt;&lt;/div&ht;</div>
                 <div slot="javascript">let count = 0;
 
 function updateDisplay() {
@@ -312,13 +288,17 @@ console.log('Sample values:', largeArray.slice(0, 10));</div>
 
         <!-- Error Handling -->
         <div class="test-section">
-            <h2>6. Error Handling Test</h2>
+            <h2>6. Error Handling Test - Test 6 Errors Should Stay Here</h2>
+            <div class="info">
+                <strong>Console Isolation Test:</strong> This test creates async errors that should appear in THIS console, not in other playgrounds on the page.
+            </div>
             <div class="controls">
                 <button onclick="resetPlayground('error-test')">Reset</button>
                 <button onclick="runPlayground('error-test')">Run</button>
             </div>
             <code-playground id="error-test" show-line-numbers>
-                <div slot="javascript">console.log('Testing error handling...');
+                <div slot="javascript">console.log('=== TEST 6 ERROR HANDLING ===');
+console.log('This playground is Test 6');
 
 try {
     console.log('This will work fine');
@@ -329,11 +309,202 @@ try {
     console.error('Caught error:', error.message);
 }
 
-// This will cause an uncaught error
+// This will cause an uncaught error - it should appear HERE, not in other playgrounds
 setTimeout(() => {
-    console.log('About to throw an error...');
-    throw new Error('This is an uncaught error!');
-}, 100);</div>
+    console.log('Test 6: About to throw async error...');
+    throw new Error('TEST 6 UNCAUGHT ERROR - should appear in Test 6 console only!');
+}, 500);</div>
+            </code-playground>
+        </div>
+
+        <!-- Compact Width Test (Default) -->
+        <div class="test-section">
+            <h2>7. Compact Width Test - Default (80 chars)</h2>
+            <div class="controls">
+                <button onclick="resetPlayground('compact-default')">Reset</button>
+                <button onclick="runPlayground('compact-default')">Run</button>
+            </div>
+            <code-playground id="compact-default" show-line-numbers>
+                <div slot="javascript">console.log('Testing default compact width (80 chars)...');
+
+// Test very simple objects to debug compact mode
+const tiny = { a: 1 };
+console.log('Tiny object (should be compact):', tiny);
+
+const small = { x: 5, y: 10 };
+console.log('Small object (should be compact):', small);
+
+// Test short object (should be compact)
+const shortObj = { a: 1, b: 2, c: 3 };
+console.log('Short object:', shortObj);
+
+// Test medium object (might be compact or expanded depending on content)
+const mediumObj = { name: 'John', age: 30, city: 'New York', email: 'john@example.com' };
+console.log('Medium object:', mediumObj);
+
+// Test long object (should be expanded)
+const longObj = {
+    firstName: 'VeryLongFirstName',
+    lastName: 'VeryLongLastName',
+    email: 'very.long.email.address@example.com',
+    address: {
+        street: '123 Very Long Street Name',
+        city: 'Very Long City Name',
+        zipCode: '12345-6789'
+    },
+    preferences: ['option1', 'option2', 'option3', 'option4']
+};
+console.log('Long object:', longObj);
+
+// Test arrays
+const shortArray = [1, 2, 3];
+const longArray = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
+console.log('Short array:', shortArray);
+console.log('Long array:', longArray);</div>
+            </code-playground>
+        </div>
+
+        <!-- Compact Width Test (40 chars) -->
+        <div class="test-section">
+            <h2>8. Compact Width Test - 40 Characters</h2>
+            <div class="controls">
+                <button onclick="resetPlayground('compact-40')">Reset</button>
+                <button onclick="runPlayground('compact-40')">Run</button>
+                <button onclick="toggleCompactWidth('compact-40', 40)">Set 40 chars</button>
+                <button onclick="toggleCompactWidth('compact-40', 80)">Reset to 80 chars</button>
+            </div>
+            <code-playground id="compact-40" compact-width="40" show-line-numbers>
+                <div slot="javascript">console.log('Testing 40-character compact width...');
+
+// Test EXACT threshold boundaries
+// "Test 40: {key: "abcdefghijklmnop"}" = 35 chars currently
+// Need exactly 40 and 41, so need 5 and 6 more characters
+// "Test 40: " = 9 chars, {key: ""} = 8 chars base, so 17 chars base total
+// For 40 chars: need 23 char value (40 - 17 = 23)
+// For 41 chars: need 24 char value (41 - 17 = 24)
+
+const exactly40 = { key: "abcdefghijklmnopqrstuv" }; // 23 chars + 17 base = exactly 40 total
+const exactly41 = { key: "abcdefghijklmnopqrstuvw" }; // 24 chars + 17 base = exactly 41 total
+
+console.log('=== BOUNDARY TESTS ===');
+console.log('Test 40:', exactly40);
+console.log('Test 41:', exactly41);
+
+// Test arrays too - "Array40: " = 9 chars prefix
+// Need arrays that total exactly 40 and 41 chars
+// "Array40: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]" 
+// Let me count: "Array40: " = 9, "[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]" = ?
+// For exactly 40: need 31 chars for array part
+// For exactly 41: need 32 chars for array part
+
+const array40 = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; // Should total exactly 40
+const array43 = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]; // Should total exactly 43
+
+console.log('Array40:', array40);
+console.log('Array43:', array43);
+
+console.log('=== OTHER TESTS ===');
+// Same objects as before, but with 40-char threshold
+const shortObj = { a: 1, b: 2, c: 3 };
+console.log('Short object:', shortObj);
+
+const mediumObj = { name: 'John', age: 30, city: 'New York' };
+console.log('Medium object:', mediumObj);
+
+const longObj = {
+    firstName: 'VeryLongFirstName',
+    lastName: 'VeryLongLastName',
+    email: 'very.long.email@example.com'
+};
+console.log('Long object:', longObj);</div>
+            </code-playground>
+        </div>
+
+        <!-- Compact Width Test (120 chars) -->
+        <div class="test-section">
+            <h2>9. Compact Width Test - 120 Characters</h2>
+            <div class="controls">
+                <button onclick="resetPlayground('compact-120')">Reset</button>
+                <button onclick="runPlayground('compact-120')">Run</button>
+                <button onclick="toggleCompactWidth('compact-120', 120)">Set 120 chars</button>
+                <button onclick="toggleCompactWidth('compact-120', 80)">Reset to 80 chars</button>
+            </div>
+            <code-playground id="compact-120" compact-width="120" show-line-numbers>
+                <div slot="javascript">console.log('Testing 120-character compact width...');
+
+// Same objects, but with more generous 120-char threshold
+const shortObj = { a: 1, b: 2, c: 3 };
+console.log('Short object:', shortObj);
+
+const mediumObj = { name: 'John', age: 30, city: 'New York', email: 'john@example.com', phone: '555-1234' };
+console.log('Medium object:', mediumObj);
+
+const longObj = {
+    firstName: 'VeryLongFirstName',
+    lastName: 'VeryLongLastName',
+    email: 'very.long.email.address@example.com',
+    address: { street: '123 Very Long Street Name', city: 'Very Long City Name' }
+};
+console.log('Long object:', longObj);
+
+// Arrays with 120-char threshold - more items should fit in compact mode
+const shortArray = [1, 2, 3, 4, 5];
+const mediumArray = Array.from({length: 20}, (_, i) => i + 1);
+const longArray = Array.from({length: 50}, (_, i) => i + 1);
+console.log('Short array:', shortArray);
+console.log('Medium array:', mediumArray);
+console.log('Long array:', longArray);</div>
+            </code-playground>
+        </div>
+
+        <!-- Dynamic Compact Width Test -->
+        <div class="test-section">
+            <h2>10. Dynamic Compact Width Test</h2>
+            <div class="info">
+                Use the controls to dynamically change the compact width and see how the same objects are displayed differently.
+            </div>
+            <div class="controls">
+                <button onclick="resetPlayground('dynamic-compact')">Reset</button>
+                <button onclick="runPlayground('dynamic-compact')">Run</button>
+                <button onclick="setDynamicCompactWidth(30)">30 chars</button>
+                <button onclick="setDynamicCompactWidth(60)">60 chars</button>
+                <button onclick="setDynamicCompactWidth(100)">100 chars</button>
+                <button onclick="setDynamicCompactWidth(150)">150 chars</button>
+            </div>
+            <code-playground id="dynamic-compact" show-line-numbers>
+                <div slot="javascript">console.log('Dynamic compact width test...');
+
+window.testObjects = function() {
+    console.clear();
+    const playground = document.getElementById('dynamic-compact');
+    const currentWidth = playground ? playground.compactWidth : 80;
+    console.log('=== Current compact width:', currentWidth, 'characters ===');
+    
+    // Test various objects and arrays
+    const examples = [
+        { name: 'tiny', data: { a: 1 } },
+        { name: 'small', data: { name: 'John', age: 30 } },
+        { name: 'medium', data: { name: 'John Doe', age: 30, city: 'New York', email: 'john@example.com' } },
+        { name: 'large', data: { 
+            firstName: 'John', 
+            lastName: 'Doe', 
+            email: 'john.doe@example.com',
+            address: { street: '123 Main St', city: 'New York', state: 'NY' },
+            preferences: ['reading', 'coding', 'music']
+        }},
+        { name: 'tiny array', data: [1, 2, 3] },
+        { name: 'small array', data: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] },
+        { name: 'medium array', data: Array.from({length: 20}, (_, i) => i + 1) },
+        { name: 'large array', data: Array.from({length: 40}, (_, i) => `item${i}`) }
+    ];
+    
+    examples.forEach(example => {
+        console.log(`${example.name}:`, example.data);
+    });
+};
+
+// Make function globally accessible
+window.testObjects();</div>
             </code-playground>
         </div>
     </div>
@@ -361,6 +532,27 @@ setTimeout(() => {
             const playground = document.getElementById(id);
             if (playground) {
                 playground.run();
+            }
+        }
+
+        function toggleCompactWidth(id, width) {
+            const playground = document.getElementById(id);
+            if (playground) {
+                playground.compactWidth = width;
+                console.log(`Set compact width to ${width} characters for ${id}`);
+                // Re-run to see the effect
+                playground.run();
+            }
+        }
+
+        function setDynamicCompactWidth(width) {
+            const playground = document.getElementById('dynamic-compact');
+            if (playground) {
+                playground.compactWidth = width;
+                // Re-run the test function to show the difference
+                if (window.testObjects) {
+                    window.testObjects();
+                }
             }
         }
 
