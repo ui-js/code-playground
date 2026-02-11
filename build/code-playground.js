@@ -535,8 +535,6 @@ class CodePlaygroundElement extends HTMLElement {
         this.dirty = true;
         if (this.runTimer)
             clearTimeout(this.runTimer);
-        if (this.consoleUpdateTimer)
-            clearTimeout(this.consoleUpdateTimer);
         this.edited = false;
         this.resetting = false;
     }
@@ -913,25 +911,18 @@ class CodePlaygroundElement extends HTMLElement {
         }
         const that = this;
         const updateConsole = () => {
-            if (this.consoleUpdateTimer)
-                clearTimeout(this.consoleUpdateTimer);
-            this.consoleUpdateTimer = setTimeout(() => {
-                console.innerHTML = this.consoleContent;
-                if (this.consoleContent) {
-                    console.classList.add('visible');
-                    // Debug: force visibility
-                    console.style.display = 'block';
-                }
-                else {
-                    console.classList.remove('visible');
-                }
-                console.scrollTop = console.scrollHeight;
-            }, 100);
+            console.innerHTML = this.consoleContent;
+            if (this.consoleContent) {
+                console.classList.add('visible');
+                // Debug: force visibility
+                console.style.display = 'block';
+            }
+            else {
+                console.classList.remove('visible');
+            }
+            console.scrollTop = console.scrollHeight;
         };
         const appendConsole = (msg, cls) => {
-            // Simulate a slow teleprinter
-            if (this.consoleUpdateTimer)
-                clearTimeout(this.consoleUpdateTimer);
             console.classList.add('visible');
             echo(msg + '\n', (s) => {
                 var _a;
@@ -1078,6 +1069,7 @@ class CodePlaygroundElement extends HTMLElement {
   
   // Override console methods directly
   const console = {
+    ...originalConsole,
     log: (...args) => pseudoConsole.log(...args),
     warn: (...args) => pseudoConsole.warn(...args),
     error: (...args) => pseudoConsole.error(...args),
@@ -1092,8 +1084,6 @@ class CodePlaygroundElement extends HTMLElement {
     assert: (condition, ...args) => pseudoConsole.assert(condition, ...args)
   };
 
-  window.console = console;
-
   // Create wrapped versions of async functions that catch errors
   const errorCatcher = window.errorCatcher${jsID};
   const originalSetTimeout = window.setTimeout;
@@ -1101,16 +1091,14 @@ class CodePlaygroundElement extends HTMLElement {
   
   // Override setTimeout and setInterval to wrap callbacks
   window.setTimeout = function(callback, delay, ...args) {
-    if (typeof callback === 'function') {
+    if (typeof callback === 'function') 
       callback = errorCatcher(callback);
-    }
     return originalSetTimeout.call(this, callback, delay, ...args);
   };
   
   window.setInterval = function(callback, delay, ...args) {
-    if (typeof callback === 'function') {
+    if (typeof callback === 'function') 
       callback = errorCatcher(callback);
-    }
     return originalSetInterval.call(this, callback, delay, ...args);
   };
   
@@ -1127,7 +1115,6 @@ ${script}
     delete window.pseudoConsole${jsID};
     delete window.outputElement${jsID};
     delete window.errorCatcher${jsID};
-    window.console = originalConsole;
   }, 1000);
 })();`);
     }
